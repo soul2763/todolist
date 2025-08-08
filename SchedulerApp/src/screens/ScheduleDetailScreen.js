@@ -21,11 +21,23 @@ const ScheduleDetailScreen = ({ route, navigation }) => {
       headerRight: () => (
         <IconButton
           icon="pencil"
-          onPress={() => navigation.navigate('EditSchedule', { scheduleId })}
+          iconColor={schedule?.isCompleted ? '#CCC' : '#2C5282'}
+          disabled={schedule?.isCompleted}
+          onPress={() => {
+            if (schedule?.isCompleted) {
+              Alert.alert(
+                '완료된 일정',
+                '완료된 일정은 수정할 수 없습니다.',
+                [{ text: '확인', style: 'default' }]
+              );
+            } else {
+              navigation.navigate('EditSchedule', { scheduleId });
+            }
+          }}
         />
       ),
     });
-  }, [navigation, scheduleId]);
+  }, [navigation, scheduleId, schedule?.isCompleted]);
 
   if (!schedule) {
     return (
@@ -120,21 +132,36 @@ const ScheduleDetailScreen = ({ route, navigation }) => {
                   icon={completedStatus.icon}
                   size={24}
                   iconColor={schedule.isCompleted ? completedStatus.color : '#A5D8FF'}
+                  disabled={schedule.isCompleted}
                   style={[
                     styles.completeButton,
-                    schedule.isCompleted && { backgroundColor: completedStatus.color + '20' }
+                    schedule.isCompleted && { 
+                      backgroundColor: completedStatus.color + '20',
+                      opacity: 0.7 
+                    }
                   ]}
-                  onPress={handleToggleComplete}
+                  onPress={schedule.isCompleted ? undefined : handleToggleComplete}
                 />
               </View>
-              {category && (
-                <Chip
-                  style={[styles.categoryChip, { backgroundColor: category.color + '20' }]}
-                  textStyle={[styles.categoryChipText, { color: category.color }]}
-                >
-                  {category.name}
-                </Chip>
-              )}
+              <View style={styles.chipsContainer}>
+                {category && (
+                  <Chip
+                    style={[styles.categoryChip, { backgroundColor: category.color + '20' }]}
+                    textStyle={[styles.categoryChipText, { color: category.color }]}
+                  >
+                    {category.name}
+                  </Chip>
+                )}
+                {schedule.isCompleted && (
+                  <Chip
+                    style={styles.completedChip}
+                    textStyle={styles.completedChipText}
+                    icon={() => <MaterialCommunityIcons name="check-circle" size={16} color="#81C784" />}
+                  >
+                    완료됨
+                  </Chip>
+                )}
+              </View>
             </Card.Content>
 
             <Card.Content style={styles.content}>
@@ -154,41 +181,63 @@ const ScheduleDetailScreen = ({ route, navigation }) => {
             </Card.Content>
           </Card>
 
-          <View style={styles.buttonContainer}>
+          <View style={[
+            styles.buttonContainer,
+            schedule.isCompleted && styles.completedButtonContainer
+          ]}>
             <Button
               mode="contained"
-              style={[styles.button, styles.editButton]}
-              onPress={() => navigation.navigate('EditSchedule', { scheduleId: schedule.id })}
+              style={[
+                styles.button, 
+                schedule.isCompleted ? [styles.disabledButton, styles.singleButton] : styles.editButton
+              ]}
+              disabled={schedule.isCompleted}
+              onPress={() => {
+                if (schedule.isCompleted) {
+                  Alert.alert(
+                    '완료된 일정',
+                    '완료된 일정은 수정할 수 없습니다.',
+                    [{ text: '확인', style: 'default' }]
+                  );
+                } else {
+                  navigation.navigate('EditSchedule', { scheduleId: schedule.id });
+                }
+              }}
               contentStyle={styles.buttonContent}
-              labelStyle={[styles.buttonLabel, styles.editButtonLabel]}
+              labelStyle={[
+                styles.buttonLabel, 
+                schedule.isCompleted ? styles.disabledButtonLabel : styles.editButtonLabel
+              ]}
               icon={({ size, color }) => (
                 <MaterialCommunityIcons
                   name="pencil-outline"
                   size={16}
-                  color="#2C5282"
+                  color={schedule.isCompleted ? "#999" : "#2C5282"}
                   style={styles.buttonIcon}
                 />
               )}
             >
-              수정하기
+              {schedule.isCompleted ? '수정 불가' : '수정하기'}
             </Button>
-            <Button
-              mode="outlined"
-              style={[styles.button, styles.deleteButton]}
-              onPress={handleDelete}
-              contentStyle={styles.buttonContent}
-              labelStyle={[styles.buttonLabel, styles.deleteButtonLabel]}
-              icon={({ size, color }) => (
-                <MaterialCommunityIcons
-                  name="delete-outline"
-                  size={16}
-                  color="#E53E3E"
-                  style={styles.buttonIcon}
-                />
-              )}
-            >
-              삭제하기
-            </Button>
+            {!schedule.isCompleted && (
+              <Button
+                mode="outlined"
+                style={[styles.button, styles.deleteButton]}
+                onPress={handleDelete}
+                contentStyle={styles.buttonContent}
+                labelStyle={[styles.buttonLabel, styles.deleteButtonLabel]}
+                icon={({ size, color }) => (
+                  <MaterialCommunityIcons
+                    name="delete-outline"
+                    size={16}
+                    color="#E53E3E"
+                    style={styles.buttonIcon}
+                  />
+                )}
+              >
+                삭제하기
+              </Button>
+            )}
           </View>
         </View>
       </ScrollView>
@@ -197,15 +246,15 @@ const ScheduleDetailScreen = ({ route, navigation }) => {
         <Dialog
           visible={completeDialogVisible}
           dismissable={false}
-          style={styles.dialog}
+          style={{ backgroundColor: 'transparent' }}
         >
-          <Dialog.Title style={styles.dialogTitle}>일정 완료</Dialog.Title>
+          <Dialog.Title>일정 완료</Dialog.Title>
           <Dialog.Content>
             <Text style={styles.dialogText}>
               이 일정을 완료 처리하시겠습니까?
             </Text>
           </Dialog.Content>
-          <Dialog.Actions style={styles.dialogActions}>
+          <Dialog.Actions style={{ padding: 16, flexDirection: 'row', justifyContent: 'center', gap: 12 }}>
             <Button
               mode="outlined"
               onPress={handleCancelComplete}
@@ -229,15 +278,15 @@ const ScheduleDetailScreen = ({ route, navigation }) => {
         <Dialog
           visible={deleteDialogVisible}
           dismissable={false}
-          style={styles.dialog}
+          style={{ backgroundColor: 'transparent' }}
         >
-          <Dialog.Title style={styles.dialogTitle}>일정 삭제</Dialog.Title>
+          <Dialog.Title>일정 삭제</Dialog.Title>
           <Dialog.Content>
             <Text style={styles.dialogText}>
               이 일정을 삭제하시겠습니까?
             </Text>
           </Dialog.Content>
-          <Dialog.Actions style={styles.dialogActions}>
+          <Dialog.Actions style={{ padding: 16, flexDirection: 'row', justifyContent: 'center', gap: 12 }}>
             <Button
               mode="outlined"
               onPress={handleCancelDelete}
@@ -309,15 +358,30 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     marginRight: 8,
   },
+  chipsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 8,
+  },
   categoryChip: {
     backgroundColor: '#A5D8FF20',
     borderColor: '#A5D8FF',
     borderWidth: 1,
-    marginTop: 8,
     alignSelf: 'flex-start',
   },
   categoryChipText: {
     color: '#2C5282',
+  },
+  completedChip: {
+    backgroundColor: '#81C784' + '20',
+    borderColor: '#81C784',
+    borderWidth: 1,
+    alignSelf: 'flex-start',
+  },
+  completedChipText: {
+    color: '#81C784',
+    fontWeight: '600',
   },
   content: {
     padding: 16,
@@ -355,6 +419,9 @@ const styles = StyleSheet.create({
     marginTop: 20,
     paddingHorizontal: 12,
   },
+  completedButtonContainer: {
+    alignItems: 'center',
+  },
   button: {
     borderRadius: 10,
     paddingVertical: 8,
@@ -372,6 +439,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#A5D8FF',
     borderWidth: 1,
     borderColor: '#2C5282',
+  },
+  disabledButton: {
+    backgroundColor: '#F5F5F5',
+    borderWidth: 1,
+    borderColor: '#CCC',
+  },
+  singleButton: {
+    maxWidth: 200,
+    alignSelf: 'center',
   },
   deleteButton: {
     backgroundColor: '#fff',
@@ -391,6 +467,9 @@ const styles = StyleSheet.create({
   },
   editButtonLabel: {
     color: '#2C5282',
+  },
+  disabledButtonLabel: {
+    color: '#999',
   },
   deleteButtonLabel: {
     color: '#E53E3E',

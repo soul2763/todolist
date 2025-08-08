@@ -1,12 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import { View, StyleSheet, ScrollView, Text, TouchableOpacity, Platform, Alert } from 'react-native';
 import { Calendar } from 'react-native-calendars';
-import { FAB, Portal, SegmentedButtons, Button } from 'react-native-paper';
+import { FAB, Portal, SegmentedButtons, Button, Dialog, Card, Chip, IconButton } from 'react-native-paper';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSchedule } from '../context/ScheduleContext';
 import { format, parseISO } from 'date-fns';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AddScheduleDialog from '../components/AddScheduleDialog';
+import ScheduleDetailDialog from '../components/ScheduleDetailDialog';
+import { HomeScreenStyles } from '../styles/HomeScreenStyles';
 
 // AlarmService 가져오기
 let AlarmService = null;
@@ -17,7 +19,7 @@ try {
 }
 
 const HomeScreen = ({ navigation }) => {
-  const { saveSchedule, getSchedulesByDate, categories, updateSchedule } = useSchedule();
+  const { saveSchedule, getSchedulesByDate, categories, updateSchedule, priorityOptions, repeatOptions } = useSchedule();
   const [selectedDate, setSelectedDate] = useState(() => {
     try {
       const now = new Date();
@@ -34,22 +36,14 @@ const HomeScreen = ({ navigation }) => {
   });
   const [viewMode, setViewMode] = useState('daily'); // 'daily', 'weekly', 'monthly'
   const [isDialogVisible, setIsDialogVisible] = useState(false);
+  const [completedScheduleDialogVisible, setCompletedScheduleDialogVisible] = useState(false);
+  const [selectedCompletedSchedule, setSelectedCompletedSchedule] = useState(null);
+  const [scheduleDetailDialogVisible, setScheduleDetailDialogVisible] = useState(false);
+  const [selectedScheduleForDetail, setSelectedScheduleForDetail] = useState(null);
 
   const insets = useSafeAreaInsets();
 
-  const priorityOptions = {
-    LOW: { label: '낮음', color: '#4CAF50', icon: () => <Icon name="emoticon-happy" size={20} color="#4CAF50" /> },
-    MEDIUM: { label: '중간', color: '#FFA500', icon: () => <Icon name="emoticon-neutral" size={20} color="#FFA500" /> },
-    HIGH: { label: '높음', color: '#FF0000', icon: () => <Icon name="emoticon-sad" size={20} color="#FF0000" /> },
-  };
 
-  const repeatOptions = {
-    NONE: { label: '반복 없음', icon: () => <Icon name="repeat" size={20} color="#2C5282" /> },
-    DAILY: { label: '매일', icon: () => <Icon name="calendar-range" size={20} color="#2C5282" /> },
-    WEEKLY: { label: '매주', icon: () => <Icon name="calendar-week" size={20} color="#2C5282" /> },
-    MONTHLY: { label: '매월', icon: () => <Icon name="calendar-month" size={20} color="#2C5282" /> },
-    YEARLY: { label: '매년', icon: () => <Icon name="calendar-year" size={20} color="#2C5282" /> },
-  };
 
   const showDialog = (selectedDateForDialog = null) => {
     setIsDialogVisible(true);
@@ -65,8 +59,6 @@ const HomeScreen = ({ navigation }) => {
       }
     }
   };
-
-
 
   const hideDialog = () => {
     setIsDialogVisible(false);
@@ -88,28 +80,6 @@ const HomeScreen = ({ navigation }) => {
       console.error('일정 완료 상태 변경 실패:', error);
     }
   };
-
-  // 알람 디버깅 함수들 (임시 비활성화)
-  // const checkAlarms = async () => {
-  //   if (AlarmService) {
-  //     await AlarmService.checkScheduledAlarms();
-  //   } else {
-  //     Alert.alert('오류', 'AlarmService를 사용할 수 없습니다.');
-  //   }
-  // };
-
-  // const testAlarm = async () => {
-  //   if (AlarmService) {
-  //     const testId = await AlarmService.scheduleTestAlarm();
-  //     if (testId) {
-  //       Alert.alert('테스트 알람', '1분 후에 테스트 알람이 울립니다.');
-  //     } else {
-  //       Alert.alert('오류', '테스트 알람 설정에 실패했습니다.');
-  //     }
-  //   } else {
-  //     Alert.alert('오류', 'AlarmService를 사용할 수 없습니다.');
-  //   }
-  // };
 
   // 선택된 날짜의 일정 목록 (기간 일정 포함)
   const schedulesForSelectedDate = useMemo(() => {
@@ -274,11 +244,9 @@ const HomeScreen = ({ navigation }) => {
     showDialog(day.dateString);
   };
 
-
-
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.calendarContainer}>
+    <SafeAreaView style={HomeScreenStyles.container}>
+      <View style={HomeScreenStyles.calendarContainer}>
         <Calendar
           onDayPress={handleDayPress}
           markedDates={getMarkedDates()}
@@ -356,9 +324,9 @@ const HomeScreen = ({ navigation }) => {
         />
       </View>
 
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollViewContent}>
-        <View style={styles.scheduleContainer}>
-          <View style={styles.viewModeContainer}>
+      <ScrollView style={HomeScreenStyles.scrollView} contentContainerStyle={HomeScreenStyles.scrollViewContent}>
+        <View style={HomeScreenStyles.scheduleContainer}>
+          <View style={HomeScreenStyles.viewModeContainer}>
             <SegmentedButtons
               value={viewMode}
               onValueChange={setViewMode}
@@ -367,36 +335,12 @@ const HomeScreen = ({ navigation }) => {
                 { value: 'weekly', label: '주간' },
                 { value: 'monthly', label: '월간' },
               ]}
-              style={styles.segmentedButtons}
+              style={HomeScreenStyles.segmentedButtons}
             />
-            <Text style={styles.dateRangeText}>{getDateRangeText()}</Text>
+            <Text style={HomeScreenStyles.dateRangeText}>{getDateRangeText()}</Text>
           </View>
 
-          {/* 알람 디버깅 버튼들 */}
-          {/* 알람 디버깅 버튼들 (임시 비활성화)
-          <View style={styles.debugContainer}>
-            <Button
-              mode="outlined"
-              onPress={checkAlarms}
-              style={styles.debugButton}
-              textColor="#2C5282"
-              icon="bell-ring"
-            >
-              알람 확인
-            </Button>
-            <Button
-              mode="outlined"
-              onPress={testAlarm}
-              style={styles.debugButton}
-              textColor="#FF5722"
-              icon="test-tube"
-            >
-              테스트 알람
-            </Button>
-          </View>
-          */}
-
-          <View style={styles.scheduleList}>
+          <View style={HomeScreenStyles.scheduleList}>
             {schedulesForSelectedDate.length > 0 ? (
               // 완료되지 않은 일정과 완료된 일정을 분리하여 정렬
               (() => {
@@ -436,61 +380,78 @@ const HomeScreen = ({ navigation }) => {
                     <TouchableOpacity
                       key={schedule.id}
                       style={[
-                        styles.scheduleItem,
-                        isCompleted && styles.completedScheduleItem
+                        HomeScreenStyles.scheduleItem,
+                        isCompleted && HomeScreenStyles.completedScheduleItem,
+                        { borderLeftColor: category?.color || '#A5D8FF', borderLeftWidth: 4 }
                       ]}
-                      onPress={() => navigation.navigate('ScheduleDetail', { scheduleId: schedule.id })}
+                      onPress={() => {
+                        if (isCompleted) {
+                          // 완료된 일정은 상세보기만 가능하도록 안내
+                          setSelectedCompletedSchedule(schedule);
+                          setCompletedScheduleDialogVisible(true);
+                        } else {
+                          setSelectedScheduleForDetail(schedule);
+                          setScheduleDetailDialogVisible(true);
+                        }
+                      }}
                     >
-                      <View style={styles.scheduleContent}>
-                        <View style={styles.scheduleTitleContainer}>
+                      <View style={HomeScreenStyles.scheduleContent}>
+                        <View style={HomeScreenStyles.scheduleTitleContainer}>
                           <View style={[
-                            styles.categoryDot, 
-                            { backgroundColor: category?.color || '#666' },
-                            isCompleted && styles.completedCategoryDot
+                            HomeScreenStyles.categoryDot, 
+                            { backgroundColor: isCompleted ? '#94A3B8' : (category?.color || '#666') }
                           ]} />
-                          <Text 
-                            style={[
-                              styles.scheduleTitle,
-                              isCompleted && styles.completedScheduleTitle
-                            ]}
-                            numberOfLines={1}
-                            ellipsizeMode="tail"
-                          >
-                            {schedule.title}
-                          </Text>
-                          {isCompleted && (
-                            <Icon 
-                              name="check-circle" 
-                              size={16} 
-                              color="#81C784" 
-                              style={styles.completedIcon}
-                            />
-                          )}
+                          <View style={HomeScreenStyles.titleAndPriorityContainer}>
+                            <Text 
+                              style={[
+                                HomeScreenStyles.scheduleTitle,
+                                isCompleted && { textDecorationLine: 'line-through' }
+                              ]}
+                              numberOfLines={1}
+                              ellipsizeMode="tail"
+                            >
+                              {schedule.title}
+                            </Text>
+                            {!isCompleted && schedule.priority && schedule.priority !== 'LOW' && (
+                              <View style={HomeScreenStyles.inlinePriorityContainer}>
+                                <Icon
+                                  name={schedule.priority === 'HIGH' ? 'star' : 'star-half-full'}
+                                  size={14}
+                                  color={priorityOptions[schedule.priority]?.color || '#FFA500'}
+                                />
+                                <Text style={HomeScreenStyles.inlinePriorityText}>
+                                  {priorityOptions[schedule.priority]?.label}
+                                </Text>
+                              </View>
+                            )}
+                          </View>
                         </View>
-                        <View style={styles.scheduleRightContent}>
-                          <Text style={[
-                            styles.scheduleTime,
-                            isCompleted && styles.completedScheduleTime
-                          ]}>
-                            {(() => {
-                              try {
-                                if (!schedule.startTime || !schedule.endTime) {
-                                  return '시간 정보 없음';
-                                }
-                                const startDate = parseISO(schedule.startTime);
-                                const endDate = parseISO(schedule.endTime);
-                                if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+                        <View style={HomeScreenStyles.scheduleRightContent}>
+                          <View style={HomeScreenStyles.scheduleMetaContainer}>
+                            <Text style={[
+                              HomeScreenStyles.scheduleTime,
+                              isCompleted && HomeScreenStyles.completedScheduleTime
+                            ]}>
+                              {(() => {
+                                try {
+                                  if (!schedule.startTime || !schedule.endTime) {
+                                    return '시간 정보 없음';
+                                  }
+                                  const startDate = parseISO(schedule.startTime);
+                                  const endDate = parseISO(schedule.endTime);
+                                  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+                                    return '시간 정보 오류';
+                                  }
+                                  return `${format(startDate, 'MM/dd HH:mm')} ~ ${format(endDate, 'MM/dd HH:mm')}`;
+                                } catch (error) {
+                                  console.error('일정 시간 포맷 오류:', error);
                                   return '시간 정보 오류';
                                 }
-                                return `${format(startDate, 'MM/dd HH:mm')} ~ ${format(endDate, 'MM/dd HH:mm')}`;
-                              } catch (error) {
-                                console.error('일정 시간 포맷 오류:', error);
-                                return '시간 정보 오류';
-                              }
-                            })()}
-                          </Text>
+                              })()}
+                            </Text>
+                          </View>
                           <TouchableOpacity
-                            style={styles.completeButton}
+                            style={HomeScreenStyles.completeButton}
                             onPress={(e) => {
                               e.stopPropagation();
                               handleToggleComplete(schedule.id, !isCompleted);
@@ -498,19 +459,20 @@ const HomeScreen = ({ navigation }) => {
                           >
                             <Icon 
                               name={isCompleted ? "check-circle" : "circle-outline"} 
-                              size={20} 
-                              color={isCompleted ? "#81C784" : "#CCC"} 
+                              size={22} 
+                              color={isCompleted ? "#81C784" : "#CBD5E0"} 
                             />
                           </TouchableOpacity>
                         </View>
                       </View>
+                      {isCompleted && <View style={HomeScreenStyles.completedOverlay} />}
                     </TouchableOpacity>
                   );
                 });
               })()
             ) : (
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>
+              <View style={HomeScreenStyles.emptyContainer}>
+                <Text style={HomeScreenStyles.emptyText}>
                   {viewMode === 'daily' && selectedDate === format(new Date(), 'yyyy-MM-dd')
                     ? '오늘의 일정이 없습니다.'
                     : viewMode === 'weekly'
@@ -519,7 +481,7 @@ const HomeScreen = ({ navigation }) => {
                     ? '이번 달 일정이 없습니다.'
                     : '선택한 기간의 일정이 없습니다.'}
                 </Text>
-                <Text style={styles.emptySubText}>
+                <Text style={HomeScreenStyles.emptySubText}>
                   + 버튼을 눌러 새로운 일정을 추가해보세요!
                 </Text>
               </View>
@@ -538,189 +500,55 @@ const HomeScreen = ({ navigation }) => {
           repeatOptions={repeatOptions}
           selectedDate={selectedDate}
         />
+        
+        <ScheduleDetailDialog
+          visible={completedScheduleDialogVisible}
+          onDismiss={() => setCompletedScheduleDialogVisible(false)}
+          schedule={selectedCompletedSchedule}
+          categories={categories}
+          priorityOptions={priorityOptions}
+          onEdit={(id) => {
+            setCompletedScheduleDialogVisible(false);
+            const s = selectedCompletedSchedule;
+            if (s && s.id === id) {
+              setSelectedScheduleForDetail(s);
+              setScheduleDetailDialogVisible(true);
+            }
+          }}
+          onComplete={() => {}}
+        />
+
+        {/* 일정 상세 다이얼로그 */}
+        <ScheduleDetailDialog
+          visible={scheduleDetailDialogVisible}
+          onDismiss={() => setScheduleDetailDialogVisible(false)}
+          schedule={selectedScheduleForDetail}
+          categories={categories}
+          priorityOptions={priorityOptions}
+          onEdit={(id) => {
+            setScheduleDetailDialogVisible(false);
+            navigation.navigate('EditSchedule', { scheduleId: id });
+          }}
+          onComplete={(id) => {
+            handleToggleComplete(id, true);
+            if (selectedScheduleForDetail && selectedScheduleForDetail.id === id) {
+              const updated = { ...selectedScheduleForDetail, isCompleted: true };
+              setSelectedScheduleForDetail(updated);
+            }
+          }}
+        />
       </Portal>
 
       <FAB
-        style={[styles.addButton, { bottom: insets.bottom + 16 }]}
+        style={[HomeScreenStyles.addButton, { bottom: insets.bottom + 12 }]}
         onPress={() => showDialog()}
         icon="plus"
         mode="flat"
         size="small"
         color="#fff"
       />
-
-
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F0F9FF',
-  },
-  calendarContainer: {
-    backgroundColor: '#fff',
-    marginHorizontal: 16,
-    marginBottom: 8,
-    borderRadius: 12,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    overflow: 'hidden',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollViewContent: {
-    flexGrow: 1,
-    paddingBottom: 80, // 네비게이션 바 높이 + 여유 공간
-  },
-  scheduleContainer: {
-    flex: 1,
-    backgroundColor: '#fff',
-    margin: 16,
-    marginTop: 8,
-    marginBottom: 16, // FAB를 위한 여백 조정
-    borderRadius: 12,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    overflow: 'hidden',
-  },
-  viewModeContainer: {
-    padding: 16,
-    paddingBottom: 8,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
-  },
-  segmentedButtons: {
-    marginBottom: 8,
-  },
-  dateRangeText: {
-    fontSize: 14,
-    color: '#2C5282',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  scheduleList: {
-    padding: 16,
-  },
-  scheduleItem: {
-    backgroundColor: '#fff',
-    padding: 12,
-    marginBottom: 8,
-    borderRadius: 8,
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    borderLeftWidth: 3,
-    borderLeftColor: '#A5D8FF',
-  },
-  scheduleContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  scheduleRightContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  scheduleTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    marginRight: 8,
-  },
-  categoryDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 8,
-  },
-  scheduleTitle: {
-    fontSize: 14,
-    color: '#2D3748',
-    flex: 1,
-  },
-  scheduleTime: {
-    fontSize: 13,
-    color: '#718096',
-    textAlign: 'right',
-  },
-  completedScheduleItem: {
-    backgroundColor: '#F8F9FA',
-    opacity: 0.7,
-  },
-  completedScheduleTitle: {
-    textDecorationLine: 'line-through',
-    color: '#999',
-  },
-  completedScheduleTime: {
-    color: '#999',
-  },
-  completedCategoryDot: {
-    opacity: 0.5,
-  },
-  completedIcon: {
-    marginLeft: 4,
-  },
-  completeButton: {
-    padding: 4,
-  },
-  addButton: {
-    position: 'absolute',
-    right: 16,
-    bottom: 88,
-    backgroundColor: '#2C5282',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    zIndex: 1000,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    marginTop: 16,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  emptySubText: {
-    fontSize: 14,
-    color: '#999',
-    textAlign: 'center',
-  },
-  debugContainer: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 12,
-    paddingHorizontal: 4,
-  },
-  debugButton: {
-    flex: 1,
-    height: 36,
-  },
-});
 
 export default HomeScreen; 

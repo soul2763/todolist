@@ -36,17 +36,18 @@ export const ScheduleProvider = ({ children }) => {
 
   // 중요도 옵션 정의
   const priorityOptions = {
-    LOW: { label: '낮음', color: '#4CAF50', icon: () => <Icon name="emoticon-happy" size={20} color="#4CAF50" /> },
-    MEDIUM: { label: '중간', color: '#FFA500', icon: () => <Icon name="emoticon-neutral" size={20} color="#FFA500" /> },
-    HIGH: { label: '높음', color: '#FF0000', icon: () => <Icon name="emoticon-sad" size={20} color="#FF0000" /> },
+    LOW: { label: '낮음', color: '#4CAF50', icon: () => <Icon name="star-outline" size={20} color="#4CAF50" /> },
+    MEDIUM: { label: '중간', color: '#FFA500', icon: () => <Icon name="star-half-full" size={20} color="#FFA500" /> },
+    HIGH: { label: '높음', color: '#FF0000', icon: () => <Icon name="star" size={20} color="#FF0000" /> },
   };
 
   // 반복 옵션 정의
   const repeatOptions = {
-    NONE: { label: '반복 안함', value: 'none' },
-    DAILY: { label: '매일', value: 'daily' },
-    WEEKLY: { label: '매주', value: 'weekly' },
-    MONTHLY: { label: '매월', value: 'monthly' },
+    NONE: { label: '반복 없음', icon: () => <Icon name="repeat" size={20} color="#2C5282" /> },
+    DAILY: { label: '매일', icon: () => <Icon name="calendar-range" size={20} color="#2C5282" /> },
+    WEEKLY: { label: '매주', icon: () => <Icon name="calendar-week" size={20} color="#2C5282" /> },
+    MONTHLY: { label: '매월', icon: () => <Icon name="calendar-month" size={20} color="#2C5282" /> },
+    YEARLY: { label: '매년', icon: () => <Icon name="calendar-year" size={20} color="#2C5282" /> },
   };
 
   // AsyncStorage에서 데이터 로드

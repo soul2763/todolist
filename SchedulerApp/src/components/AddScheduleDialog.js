@@ -278,8 +278,13 @@ const AddScheduleDialog = ({
       style={styles.dialog}
     >
       <Dialog.Title style={styles.dialogTitle}>새 일정</Dialog.Title>
-      <Dialog.Content>
-        <ScrollView style={styles.dialogScrollView}>
+      <Dialog.Content style={styles.dialogContent}>
+        <ScrollView
+          style={styles.dialogScrollView}
+          contentContainerStyle={styles.dialogScrollViewContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.inputContainer}>
             <TextInput
               label="제목"
@@ -292,7 +297,13 @@ const AddScheduleDialog = ({
               }}
               style={styles.input}
               mode="outlined"
-              theme={{ colors: { primary: '#2C5282' } }}
+              theme={{ 
+                colors: { 
+                  primary: '#2C5282',
+                  outline: '#A5D8FF',
+                  onSurfaceVariant: '#64748B'
+                } 
+              }}
               textColor="#2C5282"
               error={!!errors.title}
               autoCapitalize="none"
@@ -314,7 +325,13 @@ const AddScheduleDialog = ({
               numberOfLines={4}
               style={styles.descriptionInput}
               mode="outlined"
-              theme={{ colors: { primary: '#2C5282' } }}
+              theme={{ 
+                colors: { 
+                  primary: '#2C5282',
+                  outline: '#A5D8FF',
+                  onSurfaceVariant: '#64748B'
+                } 
+              }}
               textColor="#2C5282"
               autoCapitalize="none"
               autoCorrect={false}
@@ -327,65 +344,87 @@ const AddScheduleDialog = ({
 
           <View style={styles.widgetContainer}>
             <View style={styles.widgetRow}>
-              <Menu
-                visible={categoryMenuVisible}
-                onDismiss={() => setCategoryMenuVisible(false)}
-                anchor={
-                  <Button
-                    mode="outlined"
-                    onPress={() => setCategoryMenuVisible(true)}
-                    style={[styles.widgetButton, { borderColor: categoryId ? categories.find(c => c.id === categoryId)?.color || '#A5D8FF' : '#A5D8FF' }]}
-                    textColor={categoryId ? categories.find(c => c.id === categoryId)?.color || '#2C5282' : '#2C5282'}
-                    icon={({ size, color }) => (
-                      <View style={[styles.categoryDot, { backgroundColor: categoryId ? categories.find(c => c.id === categoryId)?.color || '#A5D8FF' : '#A5D8FF' }]} />
-                    )}
-                  >
-                    {categoryId ? categories.find(c => c.id === categoryId)?.name || '카테고리' : '카테고리'}
-                  </Button>
-                }
-              >
-                {categories.map((category) => (
-                  <Menu.Item
-                    key={category.id}
-                    onPress={() => {
-                      setCategoryId(category.id);
-                      setCategoryMenuVisible(false);
-                    }}
-                    title={category.name}
-                    leadingIcon={() => (
-                      <View style={[styles.categoryDot, { backgroundColor: category.color }]} />
-                    )}
-                  />
-                ))}
-              </Menu>
+              <View style={styles.widgetItem}>
+                <Menu
+                  visible={categoryMenuVisible}
+                  onDismiss={() => setCategoryMenuVisible(false)}
+                  anchor={
+                    <Button
+                      mode="outlined"
+                      onPress={() => setCategoryMenuVisible(true)}
+                      style={[styles.widgetButton, { borderColor: categoryId ? categories.find(c => c.id === categoryId)?.color || '#A5D8FF' : '#A5D8Ff' }]}
+                      contentStyle={styles.widgetButtonContent}
+                      labelStyle={styles.widgetButtonLabel}
+                      uppercase={false}
+                      textColor={categoryId ? categories.find(c => c.id === categoryId)?.color || '#2C5282' : '#2C5282'}
+                      icon={({ size, color }) => (
+                        <View style={[styles.categoryDot, { backgroundColor: categoryId ? categories.find(c => c.id === categoryId)?.color || '#A5D8FF' : '#A5D8FF' }]} />
+                      )}
+                      theme={{ 
+                        colors: { 
+                          primary: categoryId ? categories.find(c => c.id === categoryId)?.color || '#2C5282' : '#2C5282',
+                          outline: categoryId ? categories.find(c => c.id === categoryId)?.color || '#A5D8FF' : '#A5D8FF'
+                        } 
+                      }}
+                    >
+                      {categoryId ? categories.find(c => c.id === categoryId)?.name || '카테고리' : '카테고리'}
+                    </Button>
+                  }
+                >
+                  {categories.map((category) => (
+                    <Menu.Item
+                      key={category.id}
+                      onPress={() => {
+                        setCategoryId(category.id);
+                        setCategoryMenuVisible(false);
+                      }}
+                      title={category.name}
+                      leadingIcon={() => (
+                        <View style={[styles.categoryDot, { backgroundColor: category.color }]} />
+                      )}
+                    />
+                  ))}
+                </Menu>
+              </View>
 
-              <Menu
-                visible={priorityMenuVisible}
-                onDismiss={() => setPriorityMenuVisible(false)}
-                anchor={
-                  <Button
-                    mode="outlined"
-                    onPress={() => setPriorityMenuVisible(true)}
-                    style={[styles.widgetButton, { borderColor: priorityOptions[priority].color }]}
-                    textColor={priorityOptions[priority].color}
-                    icon={priorityOptions[priority].icon}
-                  >
-                    {priorityOptions[priority].label}
-                  </Button>
-                }
-              >
-                {Object.entries(priorityOptions).map(([key, option]) => (
-                  <Menu.Item
-                    key={key}
-                    onPress={() => {
-                      setPriority(key);
-                      setPriorityMenuVisible(false);
-                    }}
-                    title={option.label}
-                    leadingIcon={option.icon}
-                  />
-                ))}
-              </Menu>
+              <View style={styles.widgetItem}>
+                <Menu
+                  visible={priorityMenuVisible}
+                  onDismiss={() => setPriorityMenuVisible(false)}
+                  anchor={
+                    <Button
+                      mode="outlined"
+                      onPress={() => setPriorityMenuVisible(true)}
+                      style={[styles.widgetButton, { borderColor: priorityOptions[priority].color }]}
+                      contentStyle={styles.widgetButtonContent}
+                      labelStyle={styles.widgetButtonLabel}
+                      uppercase={false}
+                      textColor={priorityOptions[priority].color}
+                      icon={priorityOptions[priority].icon}
+                      theme={{ 
+                        colors: { 
+                          primary: priorityOptions[priority].color,
+                          outline: priorityOptions[priority].color
+                        } 
+                      }}
+                    >
+                      {priorityOptions[priority].label}
+                    </Button>
+                  }
+                >
+                  {Object.entries(priorityOptions).map(([key, option]) => (
+                    <Menu.Item
+                      key={key}
+                      onPress={() => {
+                        setPriority(key);
+                        setPriorityMenuVisible(false);
+                      }}
+                      title={option.label}
+                      leadingIcon={option.icon}
+                    />
+                  ))}
+                </Menu>
+              </View>
             </View>
             <HelperText type="error" visible={!!errors.category} style={styles.errorText}>
               {errors.category}
@@ -400,7 +439,7 @@ const AddScheduleDialog = ({
                    setShowStartDatePicker(true);
                    setShowStartTimePicker(false);
                  }}
-                 style={styles.timeButtonContainer}
+                 style={[styles.timeButtonContainer, { flex: 2 }]}
                >
                  <Button
                    mode="outlined"
@@ -408,6 +447,12 @@ const AddScheduleDialog = ({
                    textColor="#2C5282"
                    iconColor="#2C5282"
                    icon="calendar"
+                   theme={{ 
+                     colors: { 
+                       primary: '#2C5282',
+                       outline: '#A5D8FF'
+                     } 
+                   }}
                  >
                    {(() => {
                      try {
@@ -432,7 +477,7 @@ const AddScheduleDialog = ({
                    setShowStartTimePicker(true);
                    setShowStartDatePicker(false);
                  }}
-                 style={styles.timeButtonContainer}
+                 style={[styles.timeButtonContainer, { flex: 1 }]}
                >
                  <Button
                    mode="outlined"
@@ -440,6 +485,12 @@ const AddScheduleDialog = ({
                    textColor="#2C5282"
                    iconColor="#2C5282"
                    icon="clock"
+                   theme={{ 
+                     colors: { 
+                       primary: '#2C5282',
+                       outline: '#A5D8FF'
+                     } 
+                   }}
                  >
                    {(() => {
                      try {
@@ -470,7 +521,7 @@ const AddScheduleDialog = ({
                    setShowEndDatePicker(true);
                    setShowEndTimePicker(false);
                  }}
-                 style={styles.timeButtonContainer}
+                 style={[styles.timeButtonContainer, { flex: 2 }]}
                >
                  <Button
                    mode="outlined"
@@ -478,6 +529,12 @@ const AddScheduleDialog = ({
                    textColor="#2C5282"
                    iconColor="#2C5282"
                    icon="calendar"
+                   theme={{ 
+                     colors: { 
+                       primary: '#2C5282',
+                       outline: '#A5D8FF'
+                     } 
+                   }}
                  >
                    {(() => {
                      try {
@@ -502,7 +559,7 @@ const AddScheduleDialog = ({
                    setShowEndTimePicker(true);
                    setShowEndDatePicker(false);
                  }}
-                 style={styles.timeButtonContainer}
+                 style={[styles.timeButtonContainer, { flex: 1 }]}
                >
                  <Button
                    mode="outlined"
@@ -510,6 +567,12 @@ const AddScheduleDialog = ({
                    textColor="#2C5282"
                    iconColor="#2C5282"
                    icon="clock"
+                   theme={{ 
+                     colors: { 
+                       primary: '#2C5282',
+                       outline: '#A5D8FF'
+                     } 
+                   }}
                  >
                    {(() => {
                      try {
@@ -548,6 +611,12 @@ const AddScheduleDialog = ({
                                  style={[styles.settingButton, { borderColor: repeat !== 'NONE' ? '#2C5282' : '#E2E8F0' }]}
                                  textColor={repeat !== 'NONE' ? '#2C5282' : '#64748B'}
                                  icon="repeat"
+                                 theme={{ 
+                                   colors: { 
+                                     primary: '#2C5282',
+                                     outline: repeat !== 'NONE' ? '#2C5282' : '#E2E8F0'
+                                   } 
+                                 }}
                                >
                                  {repeatOptions[repeat].label === '반복 없음' ? '반복 안함' : repeatOptions[repeat].label}
                                </Button>
@@ -570,7 +639,7 @@ const AddScheduleDialog = ({
                            </Menu>
                          </View>
 
-                                                   <View style={styles.alarmContainer}>
+                          <View style={styles.alarmContainer}>
                             <Menu
                               visible={alarmMenuVisible}
                               onDismiss={() => setAlarmMenuVisible(false)}
@@ -581,6 +650,12 @@ const AddScheduleDialog = ({
                                   style={[styles.settingButton, { borderColor: alarmEnabled ? '#2C5282' : '#E2E8F0' }]}
                                   textColor={alarmEnabled ? '#2C5282' : '#64748B'}
                                   icon="bell"
+                                  theme={{ 
+                                    colors: { 
+                                      primary: '#2C5282',
+                                      outline: alarmEnabled ? '#2C5282' : '#E2E8F0'
+                                    } 
+                                  }}
                                 >
                                   {alarmEnabled ? '알람 켜짐' : '알람 끔'}
                                 </Button>
@@ -623,6 +698,12 @@ const AddScheduleDialog = ({
                       style={styles.alarmTimeButton}
                       textColor="#2C5282"
                       icon="clock"
+                      theme={{ 
+                        colors: { 
+                          primary: '#2C5282',
+                          outline: '#2C5282'
+                        } 
+                      }}
                     >
                       {alarmOptions[alarmOffset]?.label || '알람 시간 선택'}
                     </Button>
@@ -653,6 +734,12 @@ const AddScheduleDialog = ({
                 style={styles.repeatEndButton}
                 textColor="#2C5282"
                 icon="calendar-end"
+                theme={{ 
+                  colors: { 
+                    primary: '#2C5282',
+                    outline: '#2C5282'
+                  } 
+                }}
               >
                                  {repeatEndDate ? (() => {
                    try {
@@ -683,6 +770,12 @@ const AddScheduleDialog = ({
           onPress={handleDismiss}
           style={[styles.dialogButton, styles.cancelButton]}
           textColor="#718096"
+          theme={{ 
+            colors: { 
+              primary: '#718096',
+              outline: '#E2E8F0'
+            } 
+          }}
         >
           취소
         </Button>
@@ -692,6 +785,11 @@ const AddScheduleDialog = ({
           style={[styles.dialogButton, styles.confirmButton]}
           buttonColor="#2C5282"
           textColor="#fff"
+          theme={{ 
+            colors: { 
+              primary: '#2C5282'
+            } 
+          }}
         >
           추가
         </Button>
@@ -750,28 +848,59 @@ const AddScheduleDialog = ({
 const styles = StyleSheet.create({
   dialog: {
     backgroundColor: '#fff',
-    borderRadius: 12,
+    borderRadius: 16,
+    marginHorizontal: 16,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
   },
   dialogTitle: {
     color: '#2C5282',
     fontSize: 18,
     fontWeight: 'bold',
     padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+    backgroundColor: '#F8FAFC',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+  },
+  dialogContent: {
+    padding: 0,
   },
   dialogScrollView: {
     maxHeight: 500,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  dialogScrollViewContent: {
+    paddingBottom: 20,
   },
   dialogActions: {
     padding: 16,
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+    backgroundColor: '#F8FAFC',
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
   },
   dialogButton: {
-    minWidth: 100,
+    minWidth: 120,
+    borderRadius: 8,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   cancelButton: {
     borderColor: '#E2E8F0',
+    backgroundColor: '#fff',
   },
   confirmButton: {
     backgroundColor: '#2C5282',
@@ -781,35 +910,55 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: '#fff',
-    height: 56,
+    height: 48,
+    borderRadius: 8,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
   },
   descriptionInput: {
     backgroundColor: '#fff',
-    minHeight: 100,
+    minHeight: 120,
     textAlignVertical: 'top',
-    paddingTop: 8,
+    paddingTop: 12,
+    borderRadius: 8,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
   },
-     timeContainer: {
-     marginVertical: 8,
-   },
-   timeSectionTitle: {
-     fontSize: 14,
-     fontWeight: '600',
-     color: '#2C5282',
-     marginBottom: 8,
-     marginLeft: 4,
-   },
-   timeRow: {
-     flexDirection: 'row',
-     gap: 8,
-     marginBottom: 4,
-   },
-   timeButtonContainer: {
-     flex: 1,
-   },
-   timeButton: {
-     borderColor: '#A5D8FF',
-   },
+  timeContainer: {
+    marginVertical: 12,
+  },
+  timeSectionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#2C5282',
+    marginBottom: 6,
+    marginLeft: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  timeRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 6,
+  },
+  timeButtonContainer: {
+    // flex는 인라인 스타일로 개별 설정
+  },
+  timeButton: {
+    borderColor: '#A5D8FF',
+    borderRadius: 8,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+  },
   settingsContainer: {
     marginVertical: 12,
   },
@@ -817,8 +966,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#2C5282',
-    marginBottom: 8,
+    marginBottom: 6,
     marginLeft: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   settingsRow: {
     flexDirection: 'row',
@@ -831,16 +982,28 @@ const styles = StyleSheet.create({
   settingButton: {
     borderWidth: 1,
     height: 40,
+    borderRadius: 8,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
   },
   divider: {
-    marginVertical: 2,
+    marginVertical: 12,
     backgroundColor: '#E2E8F0',
+    height: 1,
   },
   categoryDot: {
     width: 12,
     height: 12,
     borderRadius: 6,
     marginRight: 8,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1,
   },
   errorText: {
     color: '#E53E3E',
@@ -848,24 +1011,62 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginLeft: 4,
   },
-                               alarmContainer: {
-        flex: 1,
-      },
-   alarmTimeContainer: {
-     marginTop: 8,
-   },
-   alarmTimeButton: {
-     borderColor: '#2C5282',
-     height: 40,
-   },
-   repeatEndContainer: {
-     marginTop: 8,
-   },
-   repeatEndButton: {
-     borderColor: '#2C5282',
-     height: 40,
-   },
-  
+  alarmContainer: {
+    flex: 1,
+  },
+  alarmTimeContainer: {
+    marginTop: 8,
+  },
+  alarmTimeButton: {
+    borderColor: '#2C5282',
+    height: 40,
+    borderRadius: 8,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+  },
+  repeatEndContainer: {
+    marginTop: 8,
+  },
+  repeatEndButton: {
+    borderColor: '#2C5282',
+    height: 40,
+    borderRadius: 8,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+  },
+  widgetContainer: {
+    marginBottom: 12,
+  },
+  widgetRow: {
+    flexDirection: 'row',
+    gap: 10,
+    alignItems: 'stretch',
+  },
+  widgetItem: {
+    flex: 1,
+  },
+  widgetButton: {
+    borderRadius: 8,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+  },
+  widgetButtonContent: {
+    height: 40,
+    paddingHorizontal: 12,
+  },
+  widgetButtonLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
 });
 
 export default AddScheduleDialog; 
