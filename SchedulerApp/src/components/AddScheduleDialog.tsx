@@ -4,8 +4,49 @@ import { Dialog, TextInput, Button, HelperText, Menu, Divider } from 'react-nati
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { format } from 'date-fns';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { Schedule, Category, PriorityOptions, RepeatOptions } from '../types';
 
-const AddScheduleDialog = ({ 
+type AlarmOption = {
+  label: string;
+  value: number;
+};
+
+type Props = {
+  visible: boolean;
+  onDismiss: () => void;
+  onAddSchedule: (schedule: Schedule) => Promise<void>;
+  categories: Category[];
+  priorityOptions: PriorityOptions;
+  repeatOptions: RepeatOptions;
+  selectedDate?: string;
+};
+
+type Errors = {
+  title?: string;
+  endTime?: string;
+  category?: string;
+  startTime?: string;
+};
+
+// Header 컴포넌트
+const DialogHeader: React.FC = () => (
+  <View style={{
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+    backgroundColor: '#F8FAFC',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+  }}>
+    <Text style={{
+      color: '#2C5282',
+      fontSize: 18,
+      fontWeight: 'bold',
+    }}>새 일정</Text>
+  </View>
+);
+
+const AddScheduleDialog: React.FC<Props> = ({ 
   visible, 
   onDismiss, 
   onAddSchedule, 
@@ -16,19 +57,19 @@ const AddScheduleDialog = ({
 }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [startTime, setStartTime] = useState(() => {
+  const [startTime, setStartTime] = useState<Date>(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes());
   });
-  const [endTime, setEndTime] = useState(() => {
+  const [endTime, setEndTime] = useState<Date>(() => {
     const now = new Date();
     const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours() + 1, now.getMinutes());
     return end;
   });
   const [categoryId, setCategoryId] = useState('');
-  const [priority, setPriority] = useState('LOW');
+  const [priority, setPriority] = useState<'LOW' | 'MEDIUM' | 'HIGH'>('LOW');
   const [repeat, setRepeat] = useState('NONE');
-  const [repeatEndDate, setRepeatEndDate] = useState(null);
+  const [repeatEndDate, setRepeatEndDate] = useState<Date | null>(null);
   const [alarmEnabled, setAlarmEnabled] = useState(false);
   const [alarmOffset, setAlarmOffset] = useState('5'); // 5분전 기본값
 
@@ -37,14 +78,14 @@ const AddScheduleDialog = ({
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
   const [showEndTimePicker, setShowEndTimePicker] = useState(false);
   const [showRepeatEndDatePicker, setShowRepeatEndDatePicker] = useState(false);
-     const [alarmMenuVisible, setAlarmMenuVisible] = useState(false);
-   const [alarmTimeMenuVisible, setAlarmTimeMenuVisible] = useState(false);
-   const [categoryMenuVisible, setCategoryMenuVisible] = useState(false);
-   const [priorityMenuVisible, setPriorityMenuVisible] = useState(false);
-   const [repeatMenuVisible, setRepeatMenuVisible] = useState(false);
-  const [errors, setErrors] = useState({});
+  const [alarmMenuVisible, setAlarmMenuVisible] = useState(false);
+  const [alarmTimeMenuVisible, setAlarmTimeMenuVisible] = useState(false);
+  const [categoryMenuVisible, setCategoryMenuVisible] = useState(false);
+  const [priorityMenuVisible, setPriorityMenuVisible] = useState(false);
+  const [repeatMenuVisible, setRepeatMenuVisible] = useState(false);
+  const [errors, setErrors] = useState<Errors>({});
 
-  const alarmOptions = {
+  const alarmOptions: Record<string, AlarmOption> = {
     '5': { label: '5분 전', value: 5 },
     '10': { label: '10분 전', value: 10 },
     '30': { label: '30분 전', value: 30 },
@@ -146,8 +187,8 @@ const AddScheduleDialog = ({
     setTimeout(resetForm, 300);
   };
 
-  const validateForm = () => {
-    const newErrors = {};
+  const validateForm = (): boolean => {
+    const newErrors: Errors = {};
     if (!title.trim()) {
       newErrors.title = '제목을 입력해주세요';
     }
@@ -166,7 +207,7 @@ const AddScheduleDialog = ({
 
     try {
       // 알람 시간 계산
-      let alarmTime = null;
+      let alarmTime: string | null = null;
       if (alarmEnabled && alarmOffset) {
         const offsetMinutes = parseInt(alarmOffset);
         const alarmDateTime = new Date(startTime);
@@ -181,14 +222,14 @@ const AddScheduleDialog = ({
         });
       }
 
-      const newSchedule = {
+      const newSchedule: Schedule = {
         title: title.trim(),
         description: description.trim(),
         startTime: startTime.toISOString(),
         endTime: endTime.toISOString(),
         categoryId,
         repeat,
-        repeatEndDate: repeat !== 'NONE' ? repeatEndDate?.toISOString() : null,
+        repeatEndDate: repeat !== 'NONE' ? repeatEndDate?.toISOString() || null : null,
         priority,
         alarmEnabled,
         alarmTime: alarmTime,
@@ -208,7 +249,7 @@ const AddScheduleDialog = ({
     }
   };
 
-  const handleStartDateChange = (event, selectedDate) => {
+  const handleStartDateChange = (event: any, selectedDate?: Date) => {
     setShowStartDatePicker(false);
     if (event.type !== 'dismissed' && selectedDate) {
       const newDate = new Date(startTime);
@@ -225,7 +266,7 @@ const AddScheduleDialog = ({
     }
   };
 
-  const handleStartTimeChange = (event, selectedTime) => {
+  const handleStartTimeChange = (event: any, selectedTime?: Date) => {
     setShowStartTimePicker(false);
     if (event.type !== 'dismissed' && selectedTime) {
       const newDate = new Date(startTime);
@@ -241,7 +282,7 @@ const AddScheduleDialog = ({
     }
   };
 
-  const handleEndDateChange = (event, selectedDate) => {
+  const handleEndDateChange = (event: any, selectedDate?: Date) => {
     setShowEndDatePicker(false);
     if (event.type !== 'dismissed' && selectedDate) {
       const newDate = new Date(endTime);
@@ -252,7 +293,7 @@ const AddScheduleDialog = ({
     }
   };
 
-  const handleEndTimeChange = (event, selectedTime) => {
+  const handleEndTimeChange = (event: any, selectedTime?: Date) => {
     setShowEndTimePicker(false);
     if (event.type !== 'dismissed' && selectedTime) {
       const newDate = new Date(endTime);
@@ -262,14 +303,12 @@ const AddScheduleDialog = ({
     }
   };
 
-  const handleRepeatEndDateChange = (event, selectedDate) => {
+  const handleRepeatEndDateChange = (event: any, selectedDate?: Date) => {
     setShowRepeatEndDatePicker(false);
     if (event.type !== 'dismissed' && selectedDate) {
       setRepeatEndDate(selectedDate);
     }
   };
-
-
 
   return (
     <Dialog
@@ -277,7 +316,7 @@ const AddScheduleDialog = ({
       onDismiss={handleDismiss}
       style={styles.dialog}
     >
-      <Dialog.Title style={styles.dialogTitle}>새 일정</Dialog.Title>
+      <DialogHeader />
       <Dialog.Content style={styles.dialogContent}>
         <ScrollView
           style={styles.dialogScrollView}
@@ -292,7 +331,7 @@ const AddScheduleDialog = ({
               onChangeText={(text) => {
                 setTitle(text);
                 if (errors.title) {
-                  setErrors(prev => ({ ...prev, title: null }));
+                  setErrors(prev => ({ ...prev, title: undefined }));
                 }
               }}
               style={styles.input}
@@ -400,7 +439,7 @@ const AddScheduleDialog = ({
                       labelStyle={styles.widgetButtonLabel}
                       uppercase={false}
                       textColor={priorityOptions[priority].color}
-                      icon={priorityOptions[priority].icon}
+                      icon={() => React.createElement(priorityOptions[priority].icon, { size: 20, color: priorityOptions[priority].color })}
                       theme={{ 
                         colors: { 
                           primary: priorityOptions[priority].color,
@@ -416,11 +455,11 @@ const AddScheduleDialog = ({
                     <Menu.Item
                       key={key}
                       onPress={() => {
-                        setPriority(key);
+                        setPriority(key as 'LOW' | 'MEDIUM' | 'HIGH');
                         setPriorityMenuVisible(false);
                       }}
                       title={option.label}
-                      leadingIcon={option.icon}
+                      leadingIcon={() => React.createElement(option.icon, { size: 20, color: option.color })}
                     />
                   ))}
                 </Menu>
@@ -431,300 +470,296 @@ const AddScheduleDialog = ({
             </HelperText>
           </View>
 
-                     <View style={styles.timeContainer}>
-             <Text style={styles.timeSectionTitle}>시작 시간</Text>
-             <View style={styles.timeRow}>
-               <TouchableOpacity
-                 onPress={() => {
-                   setShowStartDatePicker(true);
-                   setShowStartTimePicker(false);
-                 }}
-                 style={[styles.timeButtonContainer, { flex: 2 }]}
-               >
-                 <Button
-                   mode="outlined"
-                   style={styles.timeButton}
-                   textColor="#2C5282"
-                   iconColor="#2C5282"
-                   icon="calendar"
-                   theme={{ 
-                     colors: { 
-                       primary: '#2C5282',
-                       outline: '#A5D8FF'
-                     } 
-                   }}
-                 >
-                   {(() => {
-                     try {
-                       if (!startTime || isNaN(startTime.getTime())) {
-                         return '날짜 선택';
-                       }
-                       const testDate = new Date(startTime);
-                       if (isNaN(testDate.getTime())) {
-                         return '날짜 선택';
-                       }
-                       return format(startTime, 'yyyy년 MM월 dd일');
-                     } catch (error) {
-                       console.error('시작 날짜 포맷 오류:', error);
-                       return '날짜 선택';
-                     }
-                   })()}
-                 </Button>
-               </TouchableOpacity>
+          <View style={styles.timeContainer}>
+            <Text style={styles.timeSectionTitle}>시작 시간</Text>
+            <View style={styles.timeRow}>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowStartDatePicker(true);
+                  setShowStartTimePicker(false);
+                }}
+                style={[styles.timeButtonContainer, { flex: 2 }]}
+              >
+                <Button
+                  mode="outlined"
+                  style={styles.timeButton}
+                  textColor="#2C5282"
+                  icon="calendar"
+                  theme={{ 
+                    colors: { 
+                      primary: '#2C5282',
+                      outline: '#A5D8FF'
+                    } 
+                  }}
+                >
+                  {(() => {
+                    try {
+                      if (!startTime || isNaN(startTime.getTime())) {
+                        return '날짜 선택';
+                      }
+                      const testDate = new Date(startTime);
+                      if (isNaN(testDate.getTime())) {
+                        return '날짜 선택';
+                      }
+                      return format(startTime, 'yyyy년 MM월 dd일');
+                    } catch (error) {
+                      console.error('시작 날짜 포맷 오류:', error);
+                      return '날짜 선택';
+                    }
+                  })()}
+                </Button>
+              </TouchableOpacity>
 
-               <TouchableOpacity
-                 onPress={() => {
-                   setShowStartTimePicker(true);
-                   setShowStartDatePicker(false);
-                 }}
-                 style={[styles.timeButtonContainer, { flex: 1 }]}
-               >
-                 <Button
-                   mode="outlined"
-                   style={styles.timeButton}
-                   textColor="#2C5282"
-                   iconColor="#2C5282"
-                   icon="clock"
-                   theme={{ 
-                     colors: { 
-                       primary: '#2C5282',
-                       outline: '#A5D8FF'
-                     } 
-                   }}
-                 >
-                   {(() => {
-                     try {
-                       if (!startTime || isNaN(startTime.getTime())) {
-                         return '시간 선택';
-                       }
-                       const testDate = new Date(startTime);
-                       if (isNaN(testDate.getTime())) {
-                         return '시간 선택';
-                       }
-                       return format(startTime, 'HH:mm');
-                     } catch (error) {
-                       console.error('시작 시간 포맷 오류:', error);
-                       return '시간 선택';
-                     }
-                   })()}
-                 </Button>
-               </TouchableOpacity>
-             </View>
-             <HelperText type="error" visible={!!errors.startTime} style={styles.errorText}>
-               {errors.startTime}
-             </HelperText>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowStartTimePicker(true);
+                  setShowStartDatePicker(false);
+                }}
+                style={[styles.timeButtonContainer, { flex: 1 }]}
+              >
+                <Button
+                  mode="outlined"
+                  style={styles.timeButton}
+                  textColor="#2C5282"
+                  icon="clock"
+                  theme={{ 
+                    colors: { 
+                      primary: '#2C5282',
+                      outline: '#A5D8FF'
+                    } 
+                  }}
+                >
+                  {(() => {
+                    try {
+                      if (!startTime || isNaN(startTime.getTime())) {
+                        return '시간 선택';
+                      }
+                      const testDate = new Date(startTime);
+                      if (isNaN(testDate.getTime())) {
+                        return '시간 선택';
+                      }
+                      return format(startTime, 'HH:mm');
+                    } catch (error) {
+                      console.error('시작 시간 포맷 오류:', error);
+                      return '시간 선택';
+                    }
+                  })()}
+                </Button>
+              </TouchableOpacity>
+            </View>
+            <HelperText type="error" visible={!!errors.startTime} style={styles.errorText}>
+              {errors.startTime}
+            </HelperText>
 
-             <Text style={styles.timeSectionTitle}>종료 시간</Text>
-             <View style={styles.timeRow}>
-               <TouchableOpacity
-                 onPress={() => {
-                   setShowEndDatePicker(true);
-                   setShowEndTimePicker(false);
-                 }}
-                 style={[styles.timeButtonContainer, { flex: 2 }]}
-               >
-                 <Button
-                   mode="outlined"
-                   style={styles.timeButton}
-                   textColor="#2C5282"
-                   iconColor="#2C5282"
-                   icon="calendar"
-                   theme={{ 
-                     colors: { 
-                       primary: '#2C5282',
-                       outline: '#A5D8FF'
-                     } 
-                   }}
-                 >
-                   {(() => {
-                     try {
-                       if (!endTime || isNaN(endTime.getTime())) {
-                         return '날짜 선택';
-                       }
-                       const testDate = new Date(endTime);
-                       if (isNaN(testDate.getTime())) {
-                         return '날짜 선택';
-                       }
-                       return format(endTime, 'yyyy년 MM월 dd일');
-                     } catch (error) {
-                       console.error('종료 날짜 포맷 오류:', error);
-                       return '날짜 선택';
-                     }
-                   })()}
-                 </Button>
-               </TouchableOpacity>
+            <Text style={styles.timeSectionTitle}>종료 시간</Text>
+            <View style={styles.timeRow}>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowEndDatePicker(true);
+                  setShowEndTimePicker(false);
+                }}
+                style={[styles.timeButtonContainer, { flex: 2 }]}
+              >
+                <Button
+                  mode="outlined"
+                  style={styles.timeButton}
+                  textColor="#2C5282"
+                  icon="calendar"
+                  theme={{ 
+                    colors: { 
+                      primary: '#2C5282',
+                      outline: '#A5D8FF'
+                    } 
+                  }}
+                >
+                  {(() => {
+                    try {
+                      if (!endTime || isNaN(endTime.getTime())) {
+                        return '날짜 선택';
+                      }
+                      const testDate = new Date(endTime);
+                      if (isNaN(testDate.getTime())) {
+                        return '날짜 선택';
+                      }
+                      return format(endTime, 'yyyy년 MM월 dd일');
+                    } catch (error) {
+                      console.error('종료 날짜 포맷 오류:', error);
+                      return '날짜 선택';
+                    }
+                  })()}
+                </Button>
+              </TouchableOpacity>
 
-               <TouchableOpacity
-                 onPress={() => {
-                   setShowEndTimePicker(true);
-                   setShowEndDatePicker(false);
-                 }}
-                 style={[styles.timeButtonContainer, { flex: 1 }]}
-               >
-                 <Button
-                   mode="outlined"
-                   style={styles.timeButton}
-                   textColor="#2C5282"
-                   iconColor="#2C5282"
-                   icon="clock"
-                   theme={{ 
-                     colors: { 
-                       primary: '#2C5282',
-                       outline: '#A5D8FF'
-                     } 
-                   }}
-                 >
-                   {(() => {
-                     try {
-                       if (!endTime || isNaN(endTime.getTime())) {
-                         return '시간 선택';
-                       }
-                       const testDate = new Date(endTime);
-                       if (isNaN(testDate.getTime())) {
-                         return '시간 선택';
-                       }
-                       return format(endTime, 'HH:mm');
-                     } catch (error) {
-                       console.error('종료 시간 포맷 오류:', error);
-                       return '시간 선택';
-                     }
-                   })()}
-                 </Button>
-               </TouchableOpacity>
-             </View>
-             <HelperText type="error" visible={!!errors.endTime} style={styles.errorText}>
-               {errors.endTime}
-             </HelperText>
-           </View>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowEndTimePicker(true);
+                  setShowEndDatePicker(false);
+                }}
+                style={[styles.timeButtonContainer, { flex: 1 }]}
+              >
+                <Button
+                  mode="outlined"
+                  style={styles.timeButton}
+                  textColor="#2C5282"
+                  icon="clock"
+                  theme={{ 
+                    colors: { 
+                      primary: '#2C5282',
+                      outline: '#A5D8FF'
+                    } 
+                  }}
+                >
+                  {(() => {
+                    try {
+                      if (!endTime || isNaN(endTime.getTime())) {
+                        return '시간 선택';
+                      }
+                      const testDate = new Date(endTime);
+                      if (isNaN(testDate.getTime())) {
+                        return '시간 선택';
+                      }
+                      return format(endTime, 'HH:mm');
+                    } catch (error) {
+                      console.error('종료 시간 포맷 오류:', error);
+                      return '시간 선택';
+                    }
+                  })()}
+                </Button>
+              </TouchableOpacity>
+            </View>
+            <HelperText type="error" visible={!!errors.endTime} style={styles.errorText}>
+              {errors.endTime}
+            </HelperText>
+          </View>
 
-                     <View style={styles.settingsContainer}>
-                       <Text style={styles.settingsTitle}>설정</Text>
-                       <View style={styles.settingsRow}>
-                         <View style={styles.repeatContainer}>
-                           <Menu
-                             visible={repeatMenuVisible}
-                             onDismiss={() => setRepeatMenuVisible(false)}
-                             anchor={
-                               <Button
-                                 mode="outlined"
-                                 onPress={() => setRepeatMenuVisible(true)}
-                                 style={[styles.settingButton, { borderColor: repeat !== 'NONE' ? '#2C5282' : '#E2E8F0' }]}
-                                 textColor={repeat !== 'NONE' ? '#2C5282' : '#64748B'}
-                                 icon="repeat"
-                                 theme={{ 
-                                   colors: { 
-                                     primary: '#2C5282',
-                                     outline: repeat !== 'NONE' ? '#2C5282' : '#E2E8F0'
-                                   } 
-                                 }}
-                               >
-                                 {repeatOptions[repeat].label === '반복 없음' ? '반복 안함' : repeatOptions[repeat].label}
-                               </Button>
-                             }
-                           >
-                             {Object.entries(repeatOptions).map(([key, option]) => (
-                               <Menu.Item
-                                 key={key}
-                                 onPress={() => {
-                                   setRepeat(key);
-                                   setRepeatMenuVisible(false);
-                                   if (key !== 'NONE') {
-                                     setTimeout(() => setShowRepeatEndDatePicker(true), 100);
-                                   }
-                                 }}
-                                 title={option.label}
-                                 leadingIcon={option.icon}
-                               />
-                             ))}
-                           </Menu>
-                         </View>
-
-                          <View style={styles.alarmContainer}>
-                            <Menu
-                              visible={alarmMenuVisible}
-                              onDismiss={() => setAlarmMenuVisible(false)}
-                              anchor={
-                                <Button
-                                  mode="outlined"
-                                  onPress={() => setAlarmMenuVisible(!alarmMenuVisible)}
-                                  style={[styles.settingButton, { borderColor: alarmEnabled ? '#2C5282' : '#E2E8F0' }]}
-                                  textColor={alarmEnabled ? '#2C5282' : '#64748B'}
-                                  icon="bell"
-                                  theme={{ 
-                                    colors: { 
-                                      primary: '#2C5282',
-                                      outline: alarmEnabled ? '#2C5282' : '#E2E8F0'
-                                    } 
-                                  }}
-                                >
-                                  {alarmEnabled ? '알람 켜짐' : '알람 끔'}
-                                </Button>
-                              }
-                            >
-                              <Menu.Item
-                                onPress={() => {
-                                  setAlarmEnabled(true);
-                                  setAlarmMenuVisible(false);
-                                }}
-                                title="알람 켜기"
-                                leadingIcon={() => (
-                                  <Icon name="bell" size={20} color="#2C5282" />
-                                )}
-                              />
-                              <Menu.Item
-                                onPress={() => {
-                                  setAlarmEnabled(false);
-                                  setAlarmMenuVisible(false);
-                                }}
-                                title="알람 끄기"
-                                leadingIcon={() => (
-                                  <Icon name="bell-off" size={20} color="#64748B" />
-                                )}
-                              />
-                            </Menu>
-                          </View>
-                       </View>
-                     </View>
-
-                                           {alarmEnabled && (
-              <View style={styles.alarmTimeContainer}>
+          <View style={styles.settingsContainer}>
+            <Text style={styles.settingsTitle}>설정</Text>
+            <View style={styles.settingsRow}>
+              <View style={styles.repeatContainer}>
                 <Menu
-                  visible={alarmTimeMenuVisible}
-                  onDismiss={() => setAlarmTimeMenuVisible(false)}
+                  visible={repeatMenuVisible}
+                  onDismiss={() => setRepeatMenuVisible(false)}
                   anchor={
                     <Button
                       mode="outlined"
-                      onPress={() => setAlarmTimeMenuVisible(true)}
-                      style={styles.alarmTimeButton}
-                      textColor="#2C5282"
-                      icon="clock"
+                      onPress={() => setRepeatMenuVisible(true)}
+                      style={[styles.settingButton, { borderColor: repeat !== 'NONE' ? '#2C5282' : '#E2E8F0' }]}
+                      textColor={repeat !== 'NONE' ? '#2C5282' : '#64748B'}
+                      icon="repeat"
                       theme={{ 
                         colors: { 
                           primary: '#2C5282',
-                          outline: '#2C5282'
+                          outline: repeat !== 'NONE' ? '#2C5282' : '#E2E8F0'
                         } 
                       }}
                     >
-                      {alarmOptions[alarmOffset]?.label || '알람 시간 선택'}
+                      {repeatOptions[repeat].label === '반복 없음' ? '반복 안함' : repeatOptions[repeat].label}
                     </Button>
                   }
                 >
-                  {Object.entries(alarmOptions).map(([key, option]) => (
+                  {Object.entries(repeatOptions).map(([key, option]) => (
                     <Menu.Item
                       key={key}
                       onPress={() => {
-                        setAlarmOffset(key);
-                        setAlarmTimeMenuVisible(false);
+                        setRepeat(key);
+                        setRepeatMenuVisible(false);
+                        if (key !== 'NONE') {
+                          setTimeout(() => setShowRepeatEndDatePicker(true), 100);
+                        }
                       }}
                       title={option.label}
-                      leadingIcon={() => (
-                        <Icon name="clock-outline" size={20} color="#2C5282" />
-                      )}
+                      leadingIcon={() => React.createElement(option.icon, { size: 20, color: '#2C5282' })}
                     />
                   ))}
                 </Menu>
               </View>
-            )}
+
+              <View style={styles.alarmContainer}>
+                <Menu
+                  visible={alarmMenuVisible}
+                  onDismiss={() => setAlarmMenuVisible(false)}
+                  anchor={
+                    <Button
+                      mode="outlined"
+                      onPress={() => setAlarmMenuVisible(!alarmMenuVisible)}
+                      style={[styles.settingButton, { borderColor: alarmEnabled ? '#2C5282' : '#E2E8F0' }]}
+                      textColor={alarmEnabled ? '#2C5282' : '#64748B'}
+                      icon="bell"
+                      theme={{ 
+                        colors: { 
+                          primary: '#2C5282',
+                          outline: alarmEnabled ? '#2C5282' : '#E2E8F0'
+                        } 
+                      }}
+                    >
+                      {alarmEnabled ? '알람 켜짐' : '알람 끔'}
+                    </Button>
+                  }
+                >
+                  <Menu.Item
+                    onPress={() => {
+                      setAlarmEnabled(true);
+                      setAlarmMenuVisible(false);
+                    }}
+                    title="알람 켜기"
+                    leadingIcon={() => (
+                      <Icon name="bell" size={20} color="#2C5282" />
+                    )}
+                  />
+                  <Menu.Item
+                    onPress={() => {
+                      setAlarmEnabled(false);
+                      setAlarmMenuVisible(false);
+                    }}
+                    title="알람 끄기"
+                    leadingIcon={() => (
+                      <Icon name="bell-off" size={20} color="#64748B" />
+                    )}
+                  />
+                </Menu>
+              </View>
+            </View>
+          </View>
+
+          {alarmEnabled && (
+            <View style={styles.alarmTimeContainer}>
+              <Menu
+                visible={alarmTimeMenuVisible}
+                onDismiss={() => setAlarmTimeMenuVisible(false)}
+                anchor={
+                  <Button
+                    mode="outlined"
+                    onPress={() => setAlarmTimeMenuVisible(true)}
+                    style={styles.alarmTimeButton}
+                    textColor="#2C5282"
+                    icon="clock"
+                    theme={{ 
+                      colors: { 
+                        primary: '#2C5282',
+                        outline: '#2C5282'
+                      } 
+                    }}
+                  >
+                    {alarmOptions[alarmOffset]?.label || '알람 시간 선택'}
+                  </Button>
+                }
+              >
+                {Object.entries(alarmOptions).map(([key, option]) => (
+                  <Menu.Item
+                    key={key}
+                    onPress={() => {
+                      setAlarmOffset(key);
+                      setAlarmTimeMenuVisible(false);
+                    }}
+                    title={option.label}
+                    leadingIcon={() => (
+                      <Icon name="clock-outline" size={20} color="#2C5282" />
+                    )}
+                  />
+                ))}
+              </Menu>
+            </View>
+          )}
 
           {repeat !== 'NONE' && (
             <View style={styles.repeatEndContainer}>
@@ -741,27 +776,26 @@ const AddScheduleDialog = ({
                   } 
                 }}
               >
-                                 {repeatEndDate ? (() => {
-                   try {
-                     if (!repeatEndDate || isNaN(repeatEndDate.getTime())) {
-                       return '반복 종료일 설정';
-                     }
-                     // 날짜가 유효한지 추가 검사
-                     const testDate = new Date(repeatEndDate);
-                     if (isNaN(testDate.getTime())) {
-                       return '반복 종료일 설정';
-                     }
-                     return format(repeatEndDate, 'yyyy년 MM월 dd일');
-                   } catch (error) {
-                     console.error('반복 종료일 포맷 오류:', error);
-                     return '반복 종료일 설정';
-                   }
-                 })() : '반복 종료일 설정'}
+                {repeatEndDate ? (() => {
+                  try {
+                    if (!repeatEndDate || isNaN(repeatEndDate.getTime())) {
+                      return '반복 종료일 설정';
+                    }
+                    // 날짜가 유효한지 추가 검사
+                    const testDate = new Date(repeatEndDate);
+                    if (isNaN(testDate.getTime())) {
+                      return '반복 종료일 설정';
+                    }
+                    return format(repeatEndDate, 'yyyy년 MM월 dd일');
+                  } catch (error) {
+                    console.error('반복 종료일 포맷 오류:', error);
+                    return '반복 종료일 설정';
+                  }
+                })() : '반복 종료일 설정'}
               </Button>
             </View>
           )}
 
-          
         </ScrollView>
       </Dialog.Content>
       <Dialog.Actions style={styles.dialogActions}>
@@ -839,7 +873,6 @@ const AddScheduleDialog = ({
           minimumDate={startTime}
         />
       )}
-
 
     </Dialog>
   );
@@ -1069,4 +1102,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AddScheduleDialog; 
+export default AddScheduleDialog;

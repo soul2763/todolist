@@ -1,6 +1,109 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, ViewStyle, TextStyle, ImageStyle } from 'react-native';
 
-export const HomeScreenStyles = StyleSheet.create({
+// 스타일 타입 정의
+type HomeScreenStylesType = {
+  container: ViewStyle;
+  calendarContainer: ViewStyle;
+  scrollView: ViewStyle;
+  scrollViewContent: ViewStyle;
+  scheduleContainer: ViewStyle;
+  viewModeContainer: ViewStyle;
+  segmentedButtons: ViewStyle;
+  dateRangeText: TextStyle;
+  scheduleList: ViewStyle;
+  scheduleItem: ViewStyle;
+  scheduleContent: ViewStyle;
+  scheduleRightContent: ViewStyle;
+  scheduleMetaContainer: ViewStyle;
+  priorityIndicator: ViewStyle;
+  priorityText: TextStyle;
+  scheduleTitleContainer: ViewStyle;
+  titleAndPriorityContainer: ViewStyle;
+  inlinePriorityContainer: ViewStyle;
+  inlinePriorityText: TextStyle;
+  categoryDot: ViewStyle;
+  scheduleTitle: TextStyle;
+  scheduleTime: TextStyle;
+  completedScheduleItem: ViewStyle;
+  completedScheduleTime: TextStyle;
+  completedCategoryDot: ViewStyle;
+  completedOverlay: ViewStyle;
+  completeButton: ViewStyle;
+  addButton: ViewStyle;
+  emptyContainer: ViewStyle;
+  emptyText: TextStyle;
+  emptySubText: TextStyle;
+  debugContainer: ViewStyle;
+  debugButton: ViewStyle;
+  completedDialog: ViewStyle;
+  completedDialogTitle: TextStyle;
+  completedDialogIcon: ViewStyle;
+  completedDialogContent: ViewStyle;
+  completedScheduleTitle: TextStyle;
+  completedDialogMessage: TextStyle;
+  completedDialogActions: ViewStyle;
+  completedDialogCancelButton: ViewStyle;
+  completedDialogViewButton: ViewStyle;
+  scheduleDetailDialog: ViewStyle;
+  scheduleDetailTitleContainer: ViewStyle;
+  detailTitleContainer: ViewStyle;
+  detailCategoryDot: ViewStyle;
+  detailTitleText: TextStyle;
+  detailCompleteButton: ViewStyle;
+  scheduleDetailContent: ViewStyle;
+  detailScrollView: ViewStyle;
+  detailChipsContainer: ViewStyle;
+  detailCategoryChip: ViewStyle;
+  detailCategoryChipText: TextStyle;
+  detailCompletedChip: ViewStyle;
+  detailCompletedChipText: TextStyle;
+  detailPriorityChip: ViewStyle;
+  detailPriorityChipText: TextStyle;
+  detailTimeContainer: ViewStyle;
+  detailTimeIcon: ViewStyle;
+  detailTimeText: TextStyle;
+  detailDescriptionContainer: ViewStyle;
+  detailDescriptionLabel: TextStyle;
+  detailDescriptionText: TextStyle;
+  scheduleDetailActions: ViewStyle;
+  detailCancelButton: ViewStyle;
+  detailEditButton: ViewStyle;
+  dialogActionsContainer: ViewStyle;
+  dialogActionsContainerWithBorder: ViewStyle;
+  dialogTitleContainer: ViewStyle;
+  dialogTitleIcon: ViewStyle;
+  dialogTitleText: TextStyle;
+  scheduleDetailDialogContainer: ViewStyle;
+  scheduleDetailHeader: ViewStyle;
+  scheduleDetailHeaderContent: ViewStyle;
+  scheduleDetailHeaderLeft: ViewStyle;
+  scheduleDetailCategoryDot: ViewStyle;
+  scheduleDetailTitle: TextStyle;
+  scheduleDetailCompleteButton: ViewStyle;
+  scheduleDetailBody: ViewStyle;
+  scheduleDetailScrollView: ViewStyle;
+  scheduleDetailChipsSection: ViewStyle;
+  scheduleDetailChip: ViewStyle;
+  scheduleDetailChipText: TextStyle;
+  scheduleDetailTimeSection: ViewStyle;
+  scheduleDetailTimeHeader: ViewStyle;
+  scheduleDetailTimeIcon: ViewStyle;
+  scheduleDetailTimeLabel: TextStyle;
+  scheduleDetailTimeText: TextStyle;
+  scheduleDetailDescriptionSection: ViewStyle;
+  scheduleDetailDescriptionLabel: TextStyle;
+  scheduleDetailDescriptionText: TextStyle;
+  scheduleDetailFooter: ViewStyle;
+  scheduleDetailButton: ViewStyle;
+  scheduleDetailCancelButton: ViewStyle;
+  scheduleDetailEditButton: ViewStyle;
+  dialogBackground: ViewStyle;
+  dialogBackgroundLight: ViewStyle;
+  dialogBackgroundBlur: ViewStyle;
+  dialogBackgroundClean: ViewStyle;
+};
+
+export const HomeScreenStyles = StyleSheet.create<HomeScreenStylesType>({
   container: {
     flex: 1,
     backgroundColor: '#F0F9FF',
@@ -283,7 +386,7 @@ export const HomeScreenStyles = StyleSheet.create({
     maxHeight: '80%',
     elevation: 0,
   },
-  scheduleDetailTitle: {
+  scheduleDetailTitleContainer: {
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
@@ -601,7 +704,6 @@ export const HomeScreenStyles = StyleSheet.create({
   },
   dialogBackgroundBlur: {
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    backdropFilter: 'blur(10px)',
   },
   dialogBackgroundClean: {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
