@@ -586,74 +586,79 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
             </Text>
           </View>
 
-                     <View style={HomeScreenStyles.scheduleList}>
-             {schedulesForSelectedDate.length > 0 ? (
-               (() => {
-                 return schedulesForSelectedDate.map((schedule: Schedule) => {
-                   const isCompleted = schedule.isCompleted || false;
-                   const category = categories.find((c: Category) => c.id === schedule.categoryId);
-                   const priority = schedule.priority || 'LOW';
-                   const priorityOption = priorityOptions[priority];
+          <View style={[HomeScreenStyles.scheduleList, { maxHeight: 400 }]}>
+            <ScrollView 
+              showsVerticalScrollIndicator={true}
+              contentContainerStyle={{ paddingBottom: 16 }}
+              nestedScrollEnabled={true}
+            >
+              {schedulesForSelectedDate.length > 0 ? (
+                (() => {
+                  return schedulesForSelectedDate.map((schedule: Schedule) => {
+                    const isCompleted = schedule.isCompleted || false;
+                    const category = categories.find((c: Category) => c.id === schedule.categoryId);
+                    const priority = schedule.priority || 'LOW';
+                    const priorityOption = priorityOptions[priority];
 
-                   return (
-                     <TouchableOpacity
-                       key={schedule.id}
-                       style={[
-                         inlineStyles.enhancedScheduleItem,
-                         isCompleted && inlineStyles.enhancedCompletedScheduleItem,
-                       ]}
-                       onPress={() => {
-                         setSelectedScheduleForDetail(schedule);
-                         setScheduleDetailDialogVisible(true);
-                       }}
-                       activeOpacity={0.7}
-                     >
-                       <View style={inlineStyles.enhancedScheduleContent}>
-                         {/* 카테고리 컬러 바 */}
-                         <View 
-                           style={[
-                             inlineStyles.categoryColorBar,
-                             { backgroundColor: category?.color || '#A5D8FF' },
-                             isCompleted && inlineStyles.completedCategoryColorBar
-                           ]} 
-                         />
-                         
-                         {/* 메인 컨텐츠 */}
-                         <View style={inlineStyles.enhancedMainContent}>
-                           {/* 상단: 제목과 우선순위 */}
-                           <View style={inlineStyles.enhancedTitleRow}>
-                             <Text
-                               style={[
-                                 inlineStyles.enhancedScheduleTitle,
-                                 isCompleted && inlineStyles.enhancedCompletedText,
-                               ]}
-                               numberOfLines={2}
-                             >
-                               {schedule.title}
-                             </Text>
-                             {priority !== 'LOW' && (
-                               <View style={inlineStyles.enhancedPriorityBadge}>
-                                 {priorityOption?.icon && React.createElement(priorityOption.icon, {
-                                   size: 14,
-                                   color: priorityOption.color,
-                                 })}
-                                 <Text style={inlineStyles.enhancedPriorityText}>
-                                   {priorityOption?.label}
-                                 </Text>
-                               </View>
-                             )}
-                           </View>
+                    return (
+                      <TouchableOpacity
+                        key={schedule.id}
+                        style={[
+                          inlineStyles.enhancedScheduleItem,
+                          isCompleted && inlineStyles.enhancedCompletedScheduleItem,
+                        ]}
+                        onPress={() => {
+                          setSelectedScheduleForDetail(schedule);
+                          setScheduleDetailDialogVisible(true);
+                        }}
+                        activeOpacity={0.7}
+                      >
+                        <View style={inlineStyles.enhancedScheduleContent}>
+                          {/* 카테고리 컬러 바 */}
+                          <View 
+                            style={[
+                              inlineStyles.categoryColorBar,
+                              { backgroundColor: category?.color || '#A5D8FF' },
+                              isCompleted && inlineStyles.completedCategoryColorBar
+                            ]} 
+                          />
+                          
+                          {/* 메인 컨텐츠 */}
+                          <View style={inlineStyles.enhancedMainContent}>
+                            {/* 상단: 제목과 우선순위 */}
+                            <View style={inlineStyles.enhancedTitleRow}>
+                              <Text
+                                style={[
+                                  inlineStyles.enhancedScheduleTitle,
+                                  isCompleted && inlineStyles.enhancedCompletedText,
+                                ]}
+                                numberOfLines={2}
+                              >
+                                {schedule.title}
+                              </Text>
+                              {priority !== 'LOW' && (
+                                <View style={inlineStyles.enhancedPriorityBadge}>
+                                  {priorityOption?.icon && React.createElement(priorityOption.icon, {
+                                    size: 14,
+                                    color: priorityOption.color,
+                                  })}
+                                  <Text style={inlineStyles.enhancedPriorityText}>
+                                    {priorityOption?.label}
+                                  </Text>
+                                </View>
+                              )}
+                            </View>
 
-                           {/* 하단: 시간과 완료 버튼 */}
-                           <View style={inlineStyles.enhancedBottomRow}>
-                             <View style={inlineStyles.enhancedTimeContainer}>
-                               <Icon 
-                                 name="clock-outline" 
-                                 size={14} 
-                                 color={isCompleted ? "#94A3B8" : "#64748B"} 
-                                 style={inlineStyles.timeIcon}
-                               />
-                                                               <Text
+                            {/* 하단: 시간과 완료 버튼 */}
+                            <View style={inlineStyles.enhancedBottomRow}>
+                              <View style={inlineStyles.enhancedTimeContainer}>
+                                <Icon 
+                                  name="clock-outline" 
+                                  size={14} 
+                                  color={isCompleted ? "#94A3B8" : "#64748B"} 
+                                  style={inlineStyles.timeIcon}
+                                />
+                                <Text
                                   style={[
                                     inlineStyles.enhancedScheduleTime,
                                     isCompleted && inlineStyles.enhancedCompletedText,
@@ -683,56 +688,53 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
                                         }
                                       } else {
                                         // 다른 날짜인 경우: "12월 15일 14:30 ~ 12월 16일 16:00"
-                                        return `${format(startDate, 'M월 d일')} ${format(startDate, 'HH:mm')} ~ ${format(endDate, 'M월 d일')} ${format(endDate, 'HH:mm')}`;
+                                        return `${format(startDate, 'M월 d일 HH:mm')} ~ ${format(endDate, 'M월 d일 HH:mm')}`;
                                       }
                                     } catch (error) {
-                                      return '시간 정보 없음';
+                                      return '시간 정보를 불러올 수 없습니다';
                                     }
                                   })()}
                                 </Text>
-                             </View>
-                             
-                             <TouchableOpacity
-                               style={inlineStyles.enhancedCompleteButton}
-                               onPress={(e) => {
-                                 e.stopPropagation();
-                                 handleToggleComplete(schedule.id || '', !isCompleted);
-                               }}
-                             >
-                               <Icon 
-                                 name={isCompleted ? "check-circle" : "circle-outline"} 
-                                 size={24} 
-                                 color={isCompleted ? "#81C784" : "#CBD5E0"} 
-                               />
-                             </TouchableOpacity>
-                           </View>
-                         </View>
-                       </View>
-                       
-                       {/* 완료 오버레이 */}
-                       {isCompleted && <View style={inlineStyles.enhancedCompletedOverlay} />}
-                     </TouchableOpacity>
-                   );
-                 });
-               })()
-             ) : (
-               <View style={inlineStyles.enhancedEmptyContainer}>
-                 <Icon name="calendar-blank" size={48} color="#CBD5E0" style={inlineStyles.emptyIcon} />
-                 <Text style={inlineStyles.enhancedEmptyText}>
-                   {viewMode === 'daily' && selectedDate === format(new Date(), 'yyyy-MM-dd')
-                     ? '오늘의 일정이 없습니다.'
-                     : viewMode === 'weekly'
-                     ? '이번 주 일정이 없습니다.'
-                     : viewMode === 'monthly'
-                     ? '이번 달 일정이 없습니다.'
-                     : '선택한 기간의 일정이 없습니다.'}
-                 </Text>
-                 <Text style={inlineStyles.enhancedEmptySubText}>
-                   + 버튼을 눌러 새로운 일정을 추가해보세요!
-                 </Text>
-               </View>
-             )}
-           </View>
+                              </View>
+                              
+                              {/* 완료 버튼 */}
+                              <TouchableOpacity
+                                onPress={() => handleToggleComplete(schedule.id || '', !isCompleted)}
+                                style={inlineStyles.enhancedCompleteButton}
+                                activeOpacity={0.7}
+                              >
+                                <Icon 
+                                  name={isCompleted ? "check-circle" : "check-circle-outline"} 
+                                  size={20} 
+                                  color={isCompleted ? "#81C784" : "#2C5282"} 
+                                />
+                              </TouchableOpacity>
+                            </View>
+                          </View>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  });
+                })()
+              ) : (
+                <View style={inlineStyles.enhancedEmptyContainer}>
+                  <Icon name="calendar-blank" size={48} color="#CBD5E0" style={inlineStyles.emptyIcon} />
+                  <Text style={inlineStyles.enhancedEmptyText}>
+                    {viewMode === 'daily' && selectedDate === format(new Date(), 'yyyy-MM-dd')
+                      ? '오늘의 일정이 없습니다.'
+                      : viewMode === 'weekly'
+                      ? '이번 주 일정이 없습니다.'
+                      : viewMode === 'monthly'
+                      ? '이번 달 일정이 없습니다.'
+                      : '선택한 기간의 일정이 없습니다.'}
+                  </Text>
+                  <Text style={inlineStyles.enhancedEmptySubText}>
+                    + 버튼을 눌러 새로운 일정을 추가해보세요!
+                  </Text>
+                </View>
+              )}
+            </ScrollView>
+          </View>
         </View>
       </ScrollView>
 
