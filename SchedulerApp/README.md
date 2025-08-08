@@ -1,97 +1,160 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# SchedulerApp 📅
 
-# Getting Started
+React Native로 개발된 스케줄러 앱입니다. 일정을 추가, 편집, 검색할 수 있는 모바일 애플리케이션입니다.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## 🚀 주요 기능
 
-## Step 1: Start Metro
+- **일정 관리**: 일정 추가, 편집, 삭제
+- **우선순위 설정**: 높음, 중간, 낮음 우선순위 설정
+- **일정 검색**: 제목과 내용으로 일정 검색
+- **상세 보기**: 일정 상세 정보 확인
+- **로컬 저장**: AsyncStorage를 사용한 데이터 영속성
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+## 🛠 기술 스택
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+- **React Native** 0.79.2
+- **React Navigation** - 네비게이션
+- **React Native Paper** - UI 컴포넌트
+- **AsyncStorage** - 로컬 데이터 저장
+- **React Native Calendars** - 캘린더 기능
+- **Date-fns** - 날짜 처리
 
-```sh
-# Using npm
-npm start
+## 📱 앱 구조
 
-# OR using Yarn
-yarn start
+```
+src/
+├── components/          # 재사용 가능한 컴포넌트
+│   └── AddScheduleDialog.js
+├── context/            # React Context
+│   └── ScheduleContext.js
+├── navigation/         # 네비게이션 설정
+│   └── AppNavigator.js
+└── screens/           # 화면 컴포넌트
+    ├── HomeScreen.js
+    ├── AddScheduleScreen.js
+    ├── EditScheduleScreen.js
+    ├── ScheduleDetailScreen.js
+    └── SearchScreen.js
 ```
 
-## Step 2: Build and run your app
+## 🚀 프로젝트 실행 방법
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+### 사전 요구사항
 
-### Android
+- Node.js 18 이상
+- React Native 개발 환경 설정
+- Android Studio (Android 개발용)
+- USB로 연결된 Android 기기 또는 에뮬레이터
 
-```sh
-# Using npm
-npm run android
+### 1단계: 의존성 설치
 
-# OR using Yarn
-yarn android
+```bash
+npm install
 ```
 
-### iOS
+### 2단계: Metro 서버 시작
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
+```bash
+# Metro 번들러 시작
+npx react-native start
 ```
 
-Then, and every time you update your native dependencies, run:
+### 3단계: 앱 실행
 
-```sh
-bundle exec pod install
+새 터미널 창을 열고 다음 명령어 실행:
+
+```bash
+# Android 앱 실행
+npx react-native run-android
 ```
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+### 4단계: 개발 중 유용한 명령어
 
-```sh
-# Using npm
-npm run ios
+```bash
+# 앱 리로드
+# 터미널에서 'r' 키 입력
 
-# OR using Yarn
-yarn ios
+# 개발자 메뉴 열기
+# 터미널에서 'd' 키 입력
+
+# DevTools 열기
+# 터미널에서 'j' 키 입력
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+## 📱 앱 사용법
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+### 홈 화면
+- 일정 목록 확인
+- 새 일정 추가 버튼
+- 일정 검색 기능
 
-## Step 3: Modify your app
+### 일정 추가
+- 제목, 내용, 날짜, 우선순위 설정
+- 저장 버튼으로 일정 생성
 
-Now that you have successfully run the app, let's make changes!
+### 일정 편집
+- 기존 일정 수정
+- 삭제 기능
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+### 일정 검색
+- 제목과 내용으로 검색
+- 실시간 검색 결과
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+## 🔧 문제 해결
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
+### "Unable to load script" 오류
+1. Metro 서버가 실행 중인지 확인
+2. 포트 8081이 사용 중인지 확인
+3. 앱을 완전히 종료하고 다시 실행
 
-## Congratulations! :tada:
+### 포트 충돌 해결
+```bash
+# 포트 8081 사용 중인 프로세스 확인
+netstat -ano | findstr :8081
 
-You've successfully run and modified your React Native App. :partying_face:
+# Node.js 프로세스 종료
+taskkill /f /im node.exe
+```
 
-### Now what?
+### 캐시 초기화
+```bash
+# Metro 캐시 초기화
+npx react-native start --reset-cache
+```
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
+## 📁 프로젝트 구조 상세
 
-# Troubleshooting
+### 주요 파일 설명
 
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+- `App.tsx`: 앱의 진입점
+- `src/context/ScheduleContext.js`: 일정 데이터 상태 관리
+- `src/navigation/AppNavigator.js`: 네비게이션 설정
+- `src/screens/HomeScreen.js`: 메인 홈 화면
+- `src/components/AddScheduleDialog.js`: 일정 추가 다이얼로그
 
-# Learn More
+### 데이터 저장
+- AsyncStorage를 사용하여 로컬에 일정 데이터 저장
+- 앱 재시작 시에도 데이터 유지
 
-To learn more about React Native, take a look at the following resources:
+## 🎯 개발 환경
 
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+- **OS**: Windows 10
+- **Node.js**: 18+
+- **React Native**: 0.79.2
+- **Android**: API 36 (Android 14)
+
+## 📝 라이선스
+
+이 프로젝트는 MIT 라이선스 하에 배포됩니다.
+
+## 🤝 기여하기
+
+1. 프로젝트를 포크합니다
+2. 기능 브랜치를 생성합니다 (`git checkout -b feature/AmazingFeature`)
+3. 변경사항을 커밋합니다 (`git commit -m 'Add some AmazingFeature'`)
+4. 브랜치에 푸시합니다 (`git push origin feature/AmazingFeature`)
+5. Pull Request를 생성합니다
+
+---
+
+**SchedulerApp** - 효율적인 일정 관리를 위한 모바일 앱 📱✨

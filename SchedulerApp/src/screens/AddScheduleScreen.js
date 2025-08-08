@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Platform, TextInput as RNTextInput, Text } from 'react-native';
+import React, { useState } from 'react';
+import { View, StyleSheet, ScrollView, Platform, TextInput as RNTextInput } from 'react-native';
 import { TextInput, Button, HelperText, Portal, Dialog, Chip, IconButton, Menu, Divider } from 'react-native-paper';
 import { useSchedule } from '../context/ScheduleContext';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -7,11 +7,8 @@ import { format } from 'date-fns';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
-const EditScheduleScreen = ({ route, navigation }) => {
-  const { scheduleId } = route.params;
-  const { schedules, updateSchedule, categories, priorityOptions, repeatOptions } = useSchedule();
-  const schedule = schedules.find(s => s.id === scheduleId);
-
+const AddScheduleScreen = ({ navigation }) => {
+  const { addSchedule, categories, priorityOptions, repeatOptions } = useSchedule();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [startTime, setStartTime] = useState(new Date());
@@ -29,19 +26,6 @@ const EditScheduleScreen = ({ route, navigation }) => {
   const [repeatMenuVisible, setRepeatMenuVisible] = useState(false);
   const [categoryMenuVisible, setCategoryMenuVisible] = useState(false);
   const [errors, setErrors] = useState({});
-
-  useEffect(() => {
-    if (schedule) {
-      setTitle(schedule.title);
-      setDescription(schedule.description);
-      setStartTime(new Date(schedule.startTime));
-      setEndTime(new Date(schedule.endTime));
-      setCategoryId(schedule.categoryId);
-      setPriority(schedule.priority || 'MEDIUM');
-      setRepeat(schedule.repeat || 'NONE');
-      setRepeatEndDate(schedule.repeatEndDate ? new Date(schedule.repeatEndDate) : null);
-    }
-  }, [schedule]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -62,7 +46,7 @@ const EditScheduleScreen = ({ route, navigation }) => {
     if (!validateForm()) return;
 
     try {
-      await updateSchedule(scheduleId, {
+      const newSchedule = {
         title: title.trim(),
         description: description.trim(),
         startTime: startTime.toISOString(),
@@ -71,10 +55,13 @@ const EditScheduleScreen = ({ route, navigation }) => {
         priority,
         repeat,
         repeatEndDate: repeat !== 'NONE' ? repeatEndDate?.toISOString() : null,
-      });
-      navigation.goBack();
+        isCompleted: false,
+      };
+
+      const savedSchedule = await addSchedule(newSchedule);
+      navigation.navigate('ScheduleDetail', { scheduleId: savedSchedule.id });
     } catch (error) {
-      console.error('일정 수정 실패:', error);
+      console.error('일정 추가 실패:', error);
     }
   };
 
@@ -106,6 +93,8 @@ const EditScheduleScreen = ({ route, navigation }) => {
             theme={{ colors: { primary: '#2C5282' } }}
             textColor="#2C5282"
           />
+
+          <Divider style={styles.divider} />
 
           <View style={styles.widgetContainer}>
             <View style={styles.widgetRow}>
@@ -174,117 +163,31 @@ const EditScheduleScreen = ({ route, navigation }) => {
             </HelperText>
           </View>
 
-          <Divider style={styles.divider} />
-
           <View style={styles.timeContainer}>
-            <Text style={styles.timeSectionTitle}>시작 시간</Text>
-            <View style={styles.timeRow}>
-              <Button
-                mode="outlined"
-                onPress={() => setShowStartDatePicker(true)}
-                style={styles.timeButton}
-                textColor="#2C5282"
-                iconColor="#2C5282"
-                icon="calendar"
-              >
-                {(() => {
-                  try {
-                    if (!startTime || isNaN(startTime.getTime())) {
-                      return '날짜 선택';
-                    }
-                    const testDate = new Date(startTime);
-                    if (isNaN(testDate.getTime())) {
-                      return '날짜 선택';
-                    }
-                    return format(startTime, 'yyyy년 MM월 dd일');
-                  } catch (error) {
-                    console.error('시작 날짜 포맷 오류:', error);
-                    return '날짜 선택';
-                  }
-                })()}
-              </Button>
-
-              <Button
-                mode="outlined"
-                onPress={() => setShowStartTimePicker(true)}
-                style={styles.timeButton}
-                textColor="#2C5282"
-                iconColor="#2C5282"
-                icon="clock"
-              >
-                {(() => {
-                  try {
-                    if (!startTime || isNaN(startTime.getTime())) {
-                      return '시간 선택';
-                    }
-                    const testDate = new Date(startTime);
-                    if (isNaN(testDate.getTime())) {
-                      return '시간 선택';
-                    }
-                    return format(startTime, 'HH:mm');
-                  } catch (error) {
-                    console.error('시작 시간 포맷 오류:', error);
-                    return '시간 선택';
-                  }
-                })()}
-              </Button>
-            </View>
+            <Button
+              mode="outlined"
+              onPress={() => setShowStartDatePicker(true)}
+              style={styles.timeButton}
+              textColor="#2C5282"
+              iconColor="#2C5282"
+              icon="calendar"
+            >
+              {format(startTime, 'yyyy년 MM월 dd일 HH:mm')}
+            </Button>
             <HelperText type="error" visible={!!errors.startTime} style={styles.errorText}>
               {errors.startTime}
             </HelperText>
 
-            <Text style={styles.timeSectionTitle}>종료 시간</Text>
-            <View style={styles.timeRow}>
-              <Button
-                mode="outlined"
-                onPress={() => setShowEndDatePicker(true)}
-                style={styles.timeButton}
-                textColor="#2C5282"
-                iconColor="#2C5282"
-                icon="calendar"
-              >
-                {(() => {
-                  try {
-                    if (!endTime || isNaN(endTime.getTime())) {
-                      return '날짜 선택';
-                    }
-                    const testDate = new Date(endTime);
-                    if (isNaN(testDate.getTime())) {
-                      return '날짜 선택';
-                    }
-                    return format(endTime, 'yyyy년 MM월 dd일');
-                  } catch (error) {
-                    console.error('종료 날짜 포맷 오류:', error);
-                    return '날짜 선택';
-                  }
-                })()}
-              </Button>
-
-              <Button
-                mode="outlined"
-                onPress={() => setShowEndTimePicker(true)}
-                style={styles.timeButton}
-                textColor="#2C5282"
-                iconColor="#2C5282"
-                icon="clock"
-              >
-                {(() => {
-                  try {
-                    if (!endTime || isNaN(endTime.getTime())) {
-                      return '시간 선택';
-                    }
-                    const testDate = new Date(endTime);
-                    if (isNaN(testDate.getTime())) {
-                      return '시간 선택';
-                    }
-                    return format(endTime, 'HH:mm');
-                  } catch (error) {
-                    console.error('종료 시간 포맷 오류:', error);
-                    return '시간 선택';
-                  }
-                })()}
-              </Button>
-            </View>
+            <Button
+              mode="outlined"
+              onPress={() => setShowEndDatePicker(true)}
+              style={styles.timeButton}
+              textColor="#2C5282"
+              iconColor="#2C5282"
+              icon="calendar"
+            >
+              {format(endTime, 'yyyy년 MM월 dd일 HH:mm')}
+            </Button>
             <HelperText type="error" visible={!!errors.endTime} style={styles.errorText}>
               {errors.endTime}
             </HelperText>
@@ -303,7 +206,7 @@ const EditScheduleScreen = ({ route, navigation }) => {
                     textColor={repeat !== 'NONE' ? '#2C5282' : '#2C5282'}
                     icon="repeat"
                   >
-                    {repeatOptions[repeat].label}
+                    {repeatOptions[repeat].label === '반복 없음' ? '반복 안함' : repeatOptions[repeat].label}
                   </Button>
                 }
               >
@@ -356,7 +259,7 @@ const EditScheduleScreen = ({ route, navigation }) => {
               buttonColor="#2C5282"
               textColor="#fff"
             >
-              저장
+              추가
             </Button>
           </View>
 
@@ -366,18 +269,13 @@ const EditScheduleScreen = ({ route, navigation }) => {
               mode="date"
               onChange={(event, date) => {
                 setShowStartDatePicker(false);
-                if (event.type !== 'dismissed' && date) {
+                if (date) {
                   const newDate = new Date(startTime);
                   newDate.setFullYear(date.getFullYear());
                   newDate.setMonth(date.getMonth());
                   newDate.setDate(date.getDate());
                   setStartTime(newDate);
-                  // 종료 시간이 시작 시간보다 이전이면 종료 시간도 같이 업데이트
-                  if (endTime <= newDate) {
-                    const newEndDate = new Date(newDate);
-                    newEndDate.setHours(newDate.getHours() + 1);
-                    setEndTime(newEndDate);
-                  }
+                  setTimeout(() => setShowStartTimePicker(true), 100);
                 }
               }}
             />
@@ -390,17 +288,11 @@ const EditScheduleScreen = ({ route, navigation }) => {
               is24Hour={true}
               onChange={(event, time) => {
                 setShowStartTimePicker(false);
-                if (event.type !== 'dismissed' && time) {
+                if (time) {
                   const newDate = new Date(startTime);
                   newDate.setHours(time.getHours());
                   newDate.setMinutes(time.getMinutes());
                   setStartTime(newDate);
-                  // 종료 시간이 시작 시간보다 이전이면 종료 시간도 같이 업데이트
-                  if (endTime <= newDate) {
-                    const newEndDate = new Date(newDate);
-                    newEndDate.setHours(newDate.getHours() + 1);
-                    setEndTime(newEndDate);
-                  }
                 }
               }}
             />
@@ -412,12 +304,13 @@ const EditScheduleScreen = ({ route, navigation }) => {
               mode="date"
               onChange={(event, date) => {
                 setShowEndDatePicker(false);
-                if (event.type !== 'dismissed' && date) {
+                if (date) {
                   const newDate = new Date(endTime);
                   newDate.setFullYear(date.getFullYear());
                   newDate.setMonth(date.getMonth());
                   newDate.setDate(date.getDate());
                   setEndTime(newDate);
+                  setTimeout(() => setShowEndTimePicker(true), 100);
                 }
               }}
             />
@@ -430,7 +323,7 @@ const EditScheduleScreen = ({ route, navigation }) => {
               is24Hour={true}
               onChange={(event, time) => {
                 setShowEndTimePicker(false);
-                if (event.type !== 'dismissed' && time) {
+                if (time) {
                   const newDate = new Date(endTime);
                   newDate.setHours(time.getHours());
                   newDate.setMinutes(time.getMinutes());
@@ -493,20 +386,8 @@ const styles = StyleSheet.create({
   timeContainer: {
     marginVertical: 8,
   },
-  timeSectionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#2C5282',
-    marginBottom: 8,
-    marginLeft: 4,
-  },
-  timeRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 4,
-  },
   timeButton: {
-    flex: 1,
+    marginBottom: 8,
     borderColor: '#A5D8FF',
   },
   buttonContainer: {
@@ -561,4 +442,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default EditScheduleScreen; 
+export default AddScheduleScreen; 
