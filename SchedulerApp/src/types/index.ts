@@ -11,6 +11,13 @@ export type Schedule = {
   repeatEndDate?: string | null;
   alarmEnabled?: boolean;
   alarmTime?: string | null;
+  // 반복 일정 관련 새 필드들
+  repeatGroupId?: string;
+  isRecurring?: boolean;
+  originalRepeat?: string;
+  originalRepeatEndDate?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export type Category = {

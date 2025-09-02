@@ -15,10 +15,13 @@ type Props = {
   visible: boolean;
   onDismiss: () => void;
   onAddSchedule: (schedule: Schedule) => Promise<void>;
+  onEditSchedule?: (schedule: Schedule) => Promise<void>;
   categories: Category[];
   priorityOptions: PriorityOptions;
   repeatOptions: RepeatOptions;
   selectedDate?: string;
+  editSchedule?: Schedule | null; // 수정할 일정 데이터
+  mode?: 'add' | 'edit'; // 다이얼로그 모드
 };
 
 type Errors = {
@@ -29,7 +32,7 @@ type Errors = {
 };
 
 // Header 컴포넌트
-const DialogHeader: React.FC = () => (
+const DialogHeader: React.FC<{ mode: 'add' | 'edit' }> = ({ mode }) => (
   <View style={{
     padding: 16,
     borderBottomWidth: 1,
@@ -42,18 +45,21 @@ const DialogHeader: React.FC = () => (
       color: '#2C5282',
       fontSize: 18,
       fontWeight: 'bold',
-    }}>새 일정</Text>
+    }}>{mode === 'edit' ? '일정 수정' : '새 일정'}</Text>
   </View>
 );
 
-const AddScheduleDialog: React.FC<Props> = ({ 
+const ScheduleDialog: React.FC<Props> = ({ 
   visible, 
   onDismiss, 
   onAddSchedule, 
+  onEditSchedule,
   categories, 
   priorityOptions, 
   repeatOptions,
-  selectedDate
+  selectedDate,
+  editSchedule,
+  mode = 'add'
 }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -93,32 +99,56 @@ const AddScheduleDialog: React.FC<Props> = ({
     '1440': { label: '하루 전', value: 1440 },
   };
 
-  // selectedDate가 변경될 때 시작 시간 업데이트
+  // selectedDate가 변경되거나 수정 모드일 때 폼 초기화
   useEffect(() => {
     if (visible) {
-      try {
-        // selectedDate가 유효한지 확인
-        if (selectedDate && typeof selectedDate === 'string' && selectedDate.includes('-')) {
-          const [year, month, day] = selectedDate.split('-').map(Number);
-          if (!isNaN(year) && !isNaN(month) && !isNaN(day) && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
-            const now = new Date();
-            const newStartTime = new Date(year, month - 1, day, now.getHours(), now.getMinutes());
-            if (!isNaN(newStartTime.getTime())) {
-              setStartTime(newStartTime);
-              
-              // 종료 시간도 같이 업데이트 (1시간 후)
-              const newEndTime = new Date(year, month - 1, day, now.getHours() + 1, now.getMinutes());
-              if (!isNaN(newEndTime.getTime())) {
-                setEndTime(newEndTime);
+      if (mode === 'edit' && editSchedule) {
+        // 수정 모드: 기존 일정 데이터로 폼 초기화
+        setTitle(editSchedule.title || '');
+        setDescription(editSchedule.description || '');
+        setStartTime(new Date(editSchedule.startTime));
+        setEndTime(new Date(editSchedule.endTime));
+        setCategoryId(editSchedule.categoryId || '');
+        setPriority(editSchedule.priority || 'LOW');
+        setRepeat(editSchedule.repeat || 'NONE');
+        setRepeatEndDate(editSchedule.repeatEndDate ? new Date(editSchedule.repeatEndDate) : null);
+        setAlarmEnabled(editSchedule.alarmEnabled || false);
+        setAlarmOffset(editSchedule.alarmTime ? 
+          Math.ceil((new Date(editSchedule.startTime).getTime() - new Date(editSchedule.alarmTime).getTime()) / (1000 * 60)).toString() : '5');
+      } else {
+        // 추가 모드: selectedDate 또는 현재 시간으로 초기화
+        try {
+          if (selectedDate && typeof selectedDate === 'string' && selectedDate.includes('-')) {
+            const [year, month, day] = selectedDate.split('-').map(Number);
+            if (!isNaN(year) && !isNaN(month) && !isNaN(day) && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+              const now = new Date();
+              const newStartTime = new Date(year, month - 1, day, now.getHours(), now.getMinutes());
+              if (!isNaN(newStartTime.getTime())) {
+                setStartTime(newStartTime);
+                
+                // 종료 시간도 같이 업데이트 (1시간 후)
+                const newEndTime = new Date(year, month - 1, day, now.getHours() + 1, now.getMinutes());
+                if (!isNaN(newEndTime.getTime())) {
+                  setEndTime(newEndTime);
+                }
               }
-            } else {
-              throw new Error('Invalid start time');
             }
           } else {
-            throw new Error('Invalid date components');
+            // selectedDate가 없거나 유효하지 않으면 현재 시간으로 설정
+            const now = new Date();
+            if (!isNaN(now.getTime())) {
+              const newStartTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes());
+              const newEndTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours() + 1, now.getMinutes());
+              
+              if (!isNaN(newStartTime.getTime()) && !isNaN(newEndTime.getTime())) {
+                setStartTime(newStartTime);
+                setEndTime(newEndTime);
+              }
+            }
           }
-        } else {
-          // selectedDate가 없거나 유효하지 않으면 현재 시간으로 설정
+        } catch (error) {
+          console.error('날짜 파싱 오류:', error);
+          // 에러 발생 시 현재 시간으로 설정
           const now = new Date();
           if (!isNaN(now.getTime())) {
             const newStartTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes());
@@ -127,58 +157,53 @@ const AddScheduleDialog: React.FC<Props> = ({
             if (!isNaN(newStartTime.getTime()) && !isNaN(newEndTime.getTime())) {
               setStartTime(newStartTime);
               setEndTime(newEndTime);
-            } else {
-              throw new Error('Invalid current time');
             }
-          } else {
-            throw new Error('Invalid current date');
+          }
+        }
+      }
+    }
+  }, [selectedDate, visible, mode, editSchedule]);
+
+  const resetForm = () => {
+    if (mode === 'edit' && editSchedule) {
+      // 수정 모드: 기존 일정 데이터로 폼 초기화
+      setTitle(editSchedule.title || '');
+      setDescription(editSchedule.description || '');
+      setStartTime(new Date(editSchedule.startTime));
+      setEndTime(new Date(editSchedule.endTime));
+      setCategoryId(editSchedule.categoryId || '');
+      setPriority(editSchedule.priority || 'LOW');
+      setRepeat(editSchedule.repeat || 'NONE');
+      setRepeatEndDate(editSchedule.repeatEndDate ? new Date(editSchedule.repeatEndDate) : null);
+      setAlarmEnabled(editSchedule.alarmEnabled || false);
+      setAlarmOffset(editSchedule.alarmTime ? 
+        Math.ceil((new Date(editSchedule.startTime).getTime() - new Date(editSchedule.alarmTime).getTime()) / (1000 * 60)).toString() : '5');
+    } else {
+      // 추가 모드: 기본값으로 초기화
+      try {
+        const now = new Date();
+        if (!isNaN(now.getTime())) {
+          const newStartTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes());
+          const newEndTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours() + 1, now.getMinutes());
+          
+          if (!isNaN(newStartTime.getTime()) && !isNaN(newEndTime.getTime())) {
+            setStartTime(newStartTime);
+            setEndTime(newEndTime);
           }
         }
       } catch (error) {
-        console.error('날짜 파싱 오류:', error);
-        // 에러 발생 시 현재 시간으로 설정
-        try {
-          const now = new Date();
-          if (!isNaN(now.getTime())) {
-            const newStartTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes());
-            const newEndTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours() + 1, now.getMinutes());
-            
-            if (!isNaN(newStartTime.getTime()) && !isNaN(newEndTime.getTime())) {
-              setStartTime(newStartTime);
-              setEndTime(newEndTime);
-            }
-          }
-        } catch (fallbackError) {
-          console.error('폴백 날짜 설정도 실패:', fallbackError);
-        }
+        console.error('폼 리셋 중 날짜 설정 오류:', error);
       }
+      
+      setTitle('');
+      setDescription('');
+      setCategoryId('');
+      setPriority('LOW');
+      setRepeat('NONE');
+      setRepeatEndDate(null);
+      setAlarmEnabled(false);
+      setAlarmOffset('5');
     }
-  }, [selectedDate, visible]);
-
-  const resetForm = () => {
-    try {
-      const now = new Date();
-      if (!isNaN(now.getTime())) {
-        const newStartTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes());
-        const newEndTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours() + 1, now.getMinutes());
-        
-        if (!isNaN(newStartTime.getTime()) && !isNaN(newEndTime.getTime())) {
-          setStartTime(newStartTime);
-          setEndTime(newEndTime);
-        }
-      }
-    } catch (error) {
-      console.error('폼 리셋 중 날짜 설정 오류:', error);
-    }
-    
-    setTitle('');
-    setDescription('');
-    setCategoryId('');
-    setPriority('LOW');
-    setRepeat('NONE');
-    setRepeatEndDate(null);
-    setAlarmEnabled(false);
-    setAlarmOffset('5');
     setErrors({});
   };
 
@@ -202,7 +227,7 @@ const AddScheduleDialog: React.FC<Props> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleAddSchedule = async () => {
+  const handleSubmit = async () => {
     if (!validateForm()) return;
 
     try {
@@ -213,16 +238,10 @@ const AddScheduleDialog: React.FC<Props> = ({
         const alarmDateTime = new Date(startTime);
         alarmDateTime.setMinutes(alarmDateTime.getMinutes() - offsetMinutes);
         alarmTime = alarmDateTime.toISOString();
-        
-        console.log('🔔 알람 시간 계산:', {
-          startTime: startTime.toLocaleString(),
-          offsetMinutes: offsetMinutes,
-          alarmTime: alarmDateTime.toLocaleString(),
-          alarmTimeISO: alarmTime
-        });
       }
 
       const newSchedule: Schedule = {
+        ...(mode === 'edit' && editSchedule ? { id: editSchedule.id } : {}),
         title: title.trim(),
         description: description.trim(),
         startTime: startTime.toISOString(),
@@ -233,19 +252,26 @@ const AddScheduleDialog: React.FC<Props> = ({
         priority,
         alarmEnabled,
         alarmTime: alarmTime,
+        ...(mode === 'edit' && editSchedule ? {
+          repeatGroupId: editSchedule.repeatGroupId,
+          isRecurring: editSchedule.isRecurring,
+          originalRepeat: editSchedule.originalRepeat,
+          originalRepeatEndDate: editSchedule.originalRepeatEndDate,
+          createdAt: editSchedule.createdAt,
+          updatedAt: new Date().toISOString()
+        } : {
+          createdAt: new Date().toISOString()
+        })
       };
 
-      console.log('📅 새 일정 정보:', {
-        title: newSchedule.title,
-        startTime: newSchedule.startTime,
-        alarmEnabled: newSchedule.alarmEnabled,
-        alarmTime: newSchedule.alarmTime
-      });
-
-      await onAddSchedule(newSchedule);
+      if (mode === 'edit' && onEditSchedule) {
+        await onEditSchedule(newSchedule);
+      } else {
+        await onAddSchedule(newSchedule);
+      }
       handleDismiss();
     } catch (error) {
-      console.error('일정 추가 실패:', error);
+      console.error('일정 처리 실패:', error);
     }
   };
 
@@ -311,12 +337,13 @@ const AddScheduleDialog: React.FC<Props> = ({
   };
 
   return (
-    <Dialog
-      visible={visible}
-      onDismiss={handleDismiss}
-      style={styles.dialog}
-    >
-      <DialogHeader />
+    <>
+      <Dialog
+        visible={visible}
+        onDismiss={handleDismiss}
+        style={styles.dialog}
+      >
+      <DialogHeader mode={mode} />
       <Dialog.Content style={styles.dialogContent}>
         <ScrollView
           style={styles.dialogScrollView}
@@ -459,7 +486,7 @@ const AddScheduleDialog: React.FC<Props> = ({
                         setPriorityMenuVisible(false);
                       }}
                       title={option.label}
-                      leadingIcon={() => React.createElement(option.icon, { size: 20, color: option.color })}
+                      leadingIcon={() => React.createElement(option.icon, { size: 20, color: '#2C5282' })}
                     />
                   ))}
                 </Menu>
@@ -492,21 +519,10 @@ const AddScheduleDialog: React.FC<Props> = ({
                     } 
                   }}
                 >
-                  {(() => {
-                    try {
-                      if (!startTime || isNaN(startTime.getTime())) {
-                        return '날짜 선택';
-                      }
-                      const testDate = new Date(startTime);
-                      if (isNaN(testDate.getTime())) {
-                        return '날짜 선택';
-                      }
-                      return format(startTime, 'yyyy년 MM월 dd일');
-                    } catch (error) {
-                      console.error('시작 날짜 포맷 오류:', error);
-                      return '날짜 선택';
-                    }
-                  })()}
+                  {startTime && !isNaN(startTime.getTime()) 
+                    ? format(startTime, 'yyyy년 MM월 dd일')
+                    : '날짜 선택'
+                  }
                 </Button>
               </TouchableOpacity>
 
@@ -529,21 +545,10 @@ const AddScheduleDialog: React.FC<Props> = ({
                     } 
                   }}
                 >
-                  {(() => {
-                    try {
-                      if (!startTime || isNaN(startTime.getTime())) {
-                        return '시간 선택';
-                      }
-                      const testDate = new Date(startTime);
-                      if (isNaN(testDate.getTime())) {
-                        return '시간 선택';
-                      }
-                      return format(startTime, 'HH:mm');
-                    } catch (error) {
-                      console.error('시작 시간 포맷 오류:', error);
-                      return '시간 선택';
-                    }
-                  })()}
+                  {startTime && !isNaN(startTime.getTime()) 
+                    ? format(startTime, 'HH:mm')
+                    : '시간 선택'
+                  }
                 </Button>
               </TouchableOpacity>
             </View>
@@ -572,21 +577,10 @@ const AddScheduleDialog: React.FC<Props> = ({
                     } 
                   }}
                 >
-                  {(() => {
-                    try {
-                      if (!endTime || isNaN(endTime.getTime())) {
-                        return '날짜 선택';
-                      }
-                      const testDate = new Date(endTime);
-                      if (isNaN(testDate.getTime())) {
-                        return '날짜 선택';
-                      }
-                      return format(endTime, 'yyyy년 MM월 dd일');
-                    } catch (error) {
-                      console.error('종료 날짜 포맷 오류:', error);
-                      return '날짜 선택';
-                    }
-                  })()}
+                  {endTime && !isNaN(endTime.getTime()) 
+                    ? format(endTime, 'yyyy년 MM월 dd일')
+                    : '날짜 선택'
+                  }
                 </Button>
               </TouchableOpacity>
 
@@ -609,21 +603,10 @@ const AddScheduleDialog: React.FC<Props> = ({
                     } 
                   }}
                 >
-                  {(() => {
-                    try {
-                      if (!endTime || isNaN(endTime.getTime())) {
-                        return '시간 선택';
-                      }
-                      const testDate = new Date(endTime);
-                      if (isNaN(testDate.getTime())) {
-                        return '시간 선택';
-                      }
-                      return format(endTime, 'HH:mm');
-                    } catch (error) {
-                      console.error('종료 시간 포맷 오류:', error);
-                      return '시간 선택';
-                    }
-                  })()}
+                  {endTime && !isNaN(endTime.getTime()) 
+                    ? format(endTime, 'HH:mm')
+                    : '시간 선택'
+                  }
                 </Button>
               </TouchableOpacity>
             </View>
@@ -663,8 +646,16 @@ const AddScheduleDialog: React.FC<Props> = ({
                       onPress={() => {
                         setRepeat(key);
                         setRepeatMenuVisible(false);
+                        
+                        // 반복이 설정된 경우 자동으로 종료일 선택기 표시
                         if (key !== 'NONE') {
-                          setTimeout(() => setShowRepeatEndDatePicker(true), 100);
+                          // 약간의 지연을 두어 Menu가 완전히 닫힌 후 표시
+                          setTimeout(() => {
+                            setShowRepeatEndDatePicker(true);
+                          }, 300);
+                        } else {
+                          // 반복이 없으면 종료일 초기화
+                          setRepeatEndDate(null);
                         }
                       }}
                       title={option.label}
@@ -763,9 +754,12 @@ const AddScheduleDialog: React.FC<Props> = ({
 
           {repeat !== 'NONE' && (
             <View style={styles.repeatEndContainer}>
+              <Text style={styles.repeatEndLabel}>반복 종료일</Text>
               <Button
                 mode="outlined"
-                onPress={() => setShowRepeatEndDatePicker(true)}
+                onPress={() => {
+                  setShowRepeatEndDatePicker(true);
+                }}
                 style={styles.repeatEndButton}
                 textColor="#2C5282"
                 icon="calendar-end"
@@ -776,23 +770,16 @@ const AddScheduleDialog: React.FC<Props> = ({
                   } 
                 }}
               >
-                {repeatEndDate ? (() => {
-                  try {
-                    if (!repeatEndDate || isNaN(repeatEndDate.getTime())) {
-                      return '반복 종료일 설정';
-                    }
-                    // 날짜가 유효한지 추가 검사
-                    const testDate = new Date(repeatEndDate);
-                    if (isNaN(testDate.getTime())) {
-                      return '반복 종료일 설정';
-                    }
-                    return format(repeatEndDate, 'yyyy년 MM월 dd일');
-                  } catch (error) {
-                    console.error('반복 종료일 포맷 오류:', error);
-                    return '반복 종료일 설정';
-                  }
-                })() : '반복 종료일 설정'}
+                {repeatEndDate && !isNaN(repeatEndDate.getTime())
+                  ? format(repeatEndDate, 'yyyy년 MM월 dd일')
+                  : '종료일 설정'
+                }
               </Button>
+              {!repeatEndDate && (
+                <Text style={styles.repeatWarningText}>
+                  ⚠️ 종료일을 설정하지 않으면 1년간 반복됩니다
+                </Text>
+              )}
             </View>
           )}
 
@@ -815,7 +802,7 @@ const AddScheduleDialog: React.FC<Props> = ({
         </Button>
         <Button
           mode="contained"
-          onPress={handleAddSchedule}
+          onPress={handleSubmit}
           style={[styles.dialogButton, styles.confirmButton]}
           buttonColor="#2C5282"
           textColor="#fff"
@@ -825,7 +812,7 @@ const AddScheduleDialog: React.FC<Props> = ({
             } 
           }}
         >
-          추가
+          {mode === 'edit' ? '수정' : '추가'}
         </Button>
       </Dialog.Actions>
 
@@ -865,16 +852,18 @@ const AddScheduleDialog: React.FC<Props> = ({
         />
       )}
 
-      {showRepeatEndDatePicker && (
-        <DateTimePicker
-          value={repeatEndDate || new Date()}
-          mode="date"
-          onChange={handleRepeatEndDateChange}
-          minimumDate={startTime}
-        />
-      )}
-
     </Dialog>
+    
+    {showRepeatEndDatePicker && (
+      <DateTimePicker
+        value={repeatEndDate || new Date()}
+        mode="date"
+        display="default"
+        onChange={handleRepeatEndDateChange}
+        minimumDate={startTime}
+      />
+    )}
+    </>
   );
 };
 
@@ -889,17 +878,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 12,
   },
-  dialogTitle: {
-    color: '#2C5282',
-    fontSize: 18,
-    fontWeight: 'bold',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
-    backgroundColor: '#F8FAFC',
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-  },
+
   dialogContent: {
     padding: 0,
   },
@@ -1100,6 +1079,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
+  repeatWarningText: {
+    fontSize: 12,
+    color: '#F59E0B',
+    marginTop: 6,
+    marginLeft: 4,
+    fontStyle: 'italic',
+  },
+  repeatEndLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#2C5282',
+    marginBottom: 6,
+    marginLeft: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
 });
 
-export default AddScheduleDialog;
+export default ScheduleDialog;

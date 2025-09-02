@@ -205,3 +205,4 @@ cd ios && xcodebuild -workspace SchedulerApp.xcworkspace -scheme SchedulerApp -c
 ## 🎉 완료!
 
 아이콘이 성공적으로 적용되면 앱을 실행하여 새로운 아이콘을 확인할 수 있습니다!
+

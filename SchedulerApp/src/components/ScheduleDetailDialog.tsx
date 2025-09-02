@@ -13,6 +13,7 @@ type Props = {
   priorityOptions: PriorityOptions;
   onEdit: (scheduleId: string) => void;
   onComplete: (scheduleId: string) => void;
+  onDelete?: (scheduleId: string, deleteAllRecurring?: boolean) => void;
 };
 
 // Header 컴포넌트
@@ -197,6 +198,53 @@ const DialogBody: React.FC<{ schedule: Schedule; categories: Category[]; priorit
         </Text>
       </View>
 
+      {/* Repeat Information Section */}
+      {schedule.isRecurring && schedule.originalRepeat && schedule.originalRepeat !== 'NONE' && (
+        <View style={{
+          backgroundColor: '#E6F3FF',
+          borderRadius: 12,
+          padding: 16,
+          marginBottom: 20,
+          borderWidth: 1,
+          borderColor: '#A5D8FF',
+        }}>
+          <View style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            marginBottom: 8,
+          }}>
+            <Icon name="repeat" size={20} color="#2C5282" style={{ marginRight: 8 }} />
+            <Text style={{
+              fontSize: 16,
+              fontWeight: '600',
+              color: '#2C5282',
+            }}>반복 일정</Text>
+          </View>
+          <Text style={{
+            fontSize: 15,
+            color: '#4A5568',
+            lineHeight: 22,
+            fontWeight: '500',
+          }}>
+            {schedule.originalRepeat === 'DAILY' ? '매일 반복' :
+             schedule.originalRepeat === 'WEEKLY' ? '매주 반복' :
+             schedule.originalRepeat === 'MONTHLY' ? '매월 반복' :
+             schedule.originalRepeat === 'YEARLY' ? '매년 반복' : '반복'}
+            {schedule.originalRepeatEndDate && (
+              <Text style={{ color: '#64748B' }}>
+                {' '}(종료: {(() => {
+                  try {
+                    return format(parseISO(schedule.originalRepeatEndDate), 'yyyy년 MM월 dd일');
+                  } catch (error) {
+                    return '날짜 정보 없음';
+                  }
+                })()})
+              </Text>
+            )}
+          </Text>
+        </View>
+      )}
+
       {/* Description Section */}
       {schedule.description && (
         <View style={{
@@ -225,10 +273,16 @@ const DialogBody: React.FC<{ schedule: Schedule; categories: Category[]; priorit
 );
 
 // Footer 컴포넌트
-const DialogFooter: React.FC<{ schedule: Schedule; onDismiss: () => void; onEdit: (scheduleId: string) => void }> = ({
+const DialogFooter: React.FC<{ 
+  schedule: Schedule; 
+  onDismiss: () => void; 
+  onEdit: (scheduleId: string) => void;
+  onDelete?: (scheduleId: string, deleteAllRecurring?: boolean) => void;
+}> = ({
   schedule,
   onDismiss,
   onEdit,
+  onDelete,
 }) => (
   <Dialog.Actions style={{
     padding: 16,
@@ -245,7 +299,7 @@ const DialogFooter: React.FC<{ schedule: Schedule; onDismiss: () => void; onEdit
       mode="outlined"
       onPress={onDismiss}
       style={{
-        minWidth: 120,
+        minWidth: 100,
         borderRadius: 8,
         elevation: 2,
         shadowColor: '#000',
@@ -263,12 +317,47 @@ const DialogFooter: React.FC<{ schedule: Schedule; onDismiss: () => void; onEdit
     >
       닫기
     </Button>
+    
+    {onDelete && (
+      <Button
+        mode="outlined"
+        onPress={() => {
+          if (schedule.isRecurring && schedule.repeatGroupId) {
+            // 반복 일정인 경우 전체 삭제 확인
+            onDelete(schedule.id || '', true);
+          } else {
+            // 일반 일정 삭제
+            onDelete(schedule.id || '', false);
+          }
+        }}
+        style={{
+          minWidth: 100,
+          borderRadius: 8,
+          elevation: 2,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+          borderColor: '#E53E3E',
+          backgroundColor: '#fff',
+        }}
+        textColor="#E53E3E"
+        icon="delete"
+        labelStyle={{
+          fontSize: 14,
+          fontWeight: '600',
+        }}
+      >
+        {schedule.isRecurring ? '전체삭제' : '삭제'}
+      </Button>
+    )}
+    
     {!schedule.isCompleted && (
       <Button
         mode="contained"
         onPress={() => onEdit(schedule.id || '')}
         style={{
-          minWidth: 120,
+          minWidth: 100,
           borderRadius: 8,
           elevation: 2,
           shadowColor: '#000',
@@ -298,6 +387,7 @@ const ScheduleDetailDialog: React.FC<Props> = ({
   priorityOptions,
   onEdit,
   onComplete,
+  onDelete,
 }) => {
   return (
     <Dialog
@@ -334,6 +424,7 @@ const ScheduleDetailDialog: React.FC<Props> = ({
           schedule={schedule} 
           onDismiss={onDismiss} 
           onEdit={onEdit} 
+          onDelete={onDelete}
         />
       )}
     </Dialog>

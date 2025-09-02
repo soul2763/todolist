@@ -80,10 +80,89 @@ export const ScheduleProvider = ({ children }) => {
     }
   };
 
+  // 반복 일정 생성 함수
+  const generateRecurringSchedules = (baseSchedule) => {
+    const schedules = [];
+    
+    // 반복이 없는 경우 원본 일정만 반환
+    if (!baseSchedule.repeat || baseSchedule.repeat === 'NONE') {
+      return [baseSchedule];
+    }
+
+    // 반복 종료일이 없는 경우 1년 후로 설정
+    const endDate = baseSchedule.repeatEndDate 
+      ? new Date(baseSchedule.repeatEndDate) 
+      : (() => {
+          const oneYearLater = new Date(baseSchedule.startTime);
+          oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
+          return oneYearLater;
+        })();
+
+    const startDate = new Date(baseSchedule.startTime);
+    const originalEndTime = new Date(baseSchedule.endTime);
+    const duration = originalEndTime.getTime() - startDate.getTime(); // 일정 지속 시간
+    
+    let currentDate = new Date(startDate);
+    let instanceCount = 0;
+    const maxInstances = 365; // 최대 365개 인스턴스 제한
+    
+    const baseId = Date.now().toString();
+    const groupId = `repeat_${baseId}`;
+
+    while (currentDate <= endDate && instanceCount < maxInstances) {
+      const instanceEndTime = new Date(currentDate.getTime() + duration);
+      
+      // 각 반복 인스턴스 생성
+      const instance = {
+        ...baseSchedule,
+        id: instanceCount === 0 ? baseId : `${baseId}_${instanceCount}`,
+        startTime: currentDate.toISOString(),
+        endTime: instanceEndTime.toISOString(),
+        repeatGroupId: groupId, // 반복 그룹 식별자
+        isRecurring: true, // 반복 일정 표시
+        originalRepeat: baseSchedule.repeat, // 원본 반복 설정 보존
+        originalRepeatEndDate: baseSchedule.repeatEndDate, // 원본 반복 종료일 보존
+      };
+
+      // 알람 시간도 조정
+      if (instance.alarmTime) {
+        const originalAlarmTime = new Date(baseSchedule.alarmTime);
+        const alarmOffset = startDate.getTime() - originalAlarmTime.getTime();
+        const newAlarmTime = new Date(currentDate.getTime() - alarmOffset);
+        instance.alarmTime = newAlarmTime.toISOString();
+      }
+
+      schedules.push(instance);
+      
+      // 다음 반복 날짜 계산
+      switch (baseSchedule.repeat) {
+        case 'DAILY':
+          currentDate.setDate(currentDate.getDate() + 1);
+          break;
+        case 'WEEKLY':
+          currentDate.setDate(currentDate.getDate() + 7);
+          break;
+        case 'MONTHLY':
+          currentDate.setMonth(currentDate.getMonth() + 1);
+          break;
+        case 'YEARLY':
+          currentDate.setFullYear(currentDate.getFullYear() + 1);
+          break;
+        default:
+          break;
+      }
+      
+      instanceCount++;
+    }
+
+    console.log(`🔄 반복 일정 생성 완료: ${schedules.length}개 (${baseSchedule.repeat})`);
+    return schedules;
+  };
+
   // 일정 저장
   const saveSchedule = async (schedule) => {
     try {
-      const newSchedule = {
+      const baseSchedule = {
         ...schedule,
         id: Date.now().toString(),
         createdAt: new Date().toISOString(),
@@ -94,25 +173,33 @@ export const ScheduleProvider = ({ children }) => {
         alarmEnabled: schedule.alarmEnabled || false,
         alarmTime: schedule.alarmTime || null,
       };
-      const updatedSchedules = [...schedules, newSchedule];
+
+      // 반복 일정 생성
+      const recurringSchedules = generateRecurringSchedules(baseSchedule);
+      
+      const updatedSchedules = [...schedules, ...recurringSchedules];
       await AsyncStorage.setItem('schedules', JSON.stringify(updatedSchedules));
       setSchedules(updatedSchedules);
       
       // 알람이 설정된 경우 알람 등록 (임시 비활성화)
       console.log('🔔 일정 저장 시 알람 확인 (비활성화됨):', {
-        alarmEnabled: newSchedule.alarmEnabled,
-        alarmTime: newSchedule.alarmTime,
-        AlarmService: !!AlarmService
+        alarmEnabled: baseSchedule.alarmEnabled,
+        alarmTime: baseSchedule.alarmTime,
+        AlarmService: !!AlarmService,
+        recurringCount: recurringSchedules.length
       });
       
-      // if (newSchedule.alarmEnabled && newSchedule.alarmTime && AlarmService) {
+      // if (baseSchedule.alarmEnabled && baseSchedule.alarmTime && AlarmService) {
       //   console.log('✅ 알람 등록 시작');
-      //   await AlarmService.scheduleAlarm(newSchedule);
+      //   // 각 반복 일정에 대해 알람 등록
+      //   for (const recurringSchedule of recurringSchedules) {
+      //     await AlarmService.scheduleAlarm(recurringSchedule);
+      //   }
       // } else {
       //   console.log('❌ 알람 등록 조건 불충족');
       // }
       
-      return newSchedule;
+      return baseSchedule;
     } catch (error) {
       console.error('일정 저장 실패:', error);
       throw error;
@@ -147,12 +234,34 @@ export const ScheduleProvider = ({ children }) => {
     }
   };
 
-  // 일정 삭제
-  const deleteSchedule = async (id) => {
+  // 반복 일정 그룹 삭제 함수
+  const deleteRecurringScheduleGroup = async (groupId) => {
     try {
-      const updatedSchedules = schedules.filter(schedule => schedule.id !== id);
+      const updatedSchedules = schedules.filter(schedule => schedule.repeatGroupId !== groupId);
       await AsyncStorage.setItem('schedules', JSON.stringify(updatedSchedules));
       setSchedules(updatedSchedules);
+      
+      console.log(`🗑️ 반복 일정 그룹 삭제: ${groupId}`);
+    } catch (error) {
+      console.error('반복 일정 그룹 삭제 실패:', error);
+      throw error;
+    }
+  };
+
+  // 일정 삭제
+  const deleteSchedule = async (id, deleteAllRecurring = false) => {
+    try {
+      const targetSchedule = schedules.find(schedule => schedule.id === id);
+      
+      if (deleteAllRecurring && targetSchedule?.repeatGroupId) {
+        // 반복 일정 전체 삭제
+        await deleteRecurringScheduleGroup(targetSchedule.repeatGroupId);
+      } else {
+        // 개별 일정만 삭제
+        const updatedSchedules = schedules.filter(schedule => schedule.id !== id);
+        await AsyncStorage.setItem('schedules', JSON.stringify(updatedSchedules));
+        setSchedules(updatedSchedules);
+      }
       
       // 일정 삭제 시 알람도 함께 취소 (임시 비활성화)
       // if (AlarmService) {
@@ -220,6 +329,7 @@ export const ScheduleProvider = ({ children }) => {
       saveSchedule,
       updateSchedule,
       deleteSchedule,
+      deleteRecurringScheduleGroup,
       searchSchedules,
       getSchedulesByDate,
       getSchedulesByCategory,

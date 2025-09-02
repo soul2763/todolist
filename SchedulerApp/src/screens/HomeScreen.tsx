@@ -6,7 +6,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useSchedule } from '../context/ScheduleContext';
 import { format, parseISO } from 'date-fns';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import AddScheduleDialog from '../components/AddScheduleDialog';
+import AddScheduleDialog from '../components/ScheduleDialog';
 import ScheduleDetailDialog from '../components/ScheduleDetailDialog';
 import { HomeScreenStyles } from '../styles/HomeScreenStyles';
 import { Schedule, Category, PriorityOptions, RepeatOptions, ViewMode } from '../types';
@@ -200,7 +200,7 @@ const inlineStyles = StyleSheet.create({
 });
 
 const HomeScreen: React.FC<Props> = ({ navigation }) => {
-  const { saveSchedule, getSchedulesByDate, categories, updateSchedule, priorityOptions, repeatOptions, schedules } = useSchedule();
+  const { saveSchedule, getSchedulesByDate, categories, updateSchedule, deleteSchedule, deleteRecurringScheduleGroup, priorityOptions, repeatOptions, schedules } = useSchedule();
   const [selectedDate, setSelectedDate] = useState<string>(() => {
     try {
       const now = new Date();
@@ -219,6 +219,8 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
   const [isDialogVisible, setIsDialogVisible] = useState(false);
   const [scheduleDetailDialogVisible, setScheduleDetailDialogVisible] = useState(false);
   const [selectedScheduleForDetail, setSelectedScheduleForDetail] = useState<Schedule | null>(null);
+  const [isAddDialogVisible, setIsAddDialogVisible] = useState(false);
+  const [editScheduleData, setEditScheduleData] = useState<Schedule | null>(null);
 
   const insets = useSafeAreaInsets();
 
@@ -241,6 +243,28 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
     setIsDialogVisible(false);
   };
 
+  const showAddDialog = (scheduleToEdit?: Schedule | null) => {
+    if (scheduleToEdit) {
+      setEditScheduleData(scheduleToEdit);
+    }
+    setIsAddDialogVisible(true);
+  };
+
+  const hideAddDialog = () => {
+    setIsAddDialogVisible(false);
+    setEditScheduleData(null);
+  };
+
+  const handleEditSchedule = async (schedule: Schedule) => {
+    try {
+      const { id, ...updatedData } = schedule;
+      await updateSchedule(id, updatedData);
+      hideAddDialog();
+    } catch (error) {
+      console.error('일정 수정 실패:', error);
+    }
+  };
+
   const handleAddSchedule = async (newSchedule: Schedule) => {
     try {
       await saveSchedule(newSchedule);
@@ -256,6 +280,15 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
       await updateSchedule(scheduleId, { isCompleted });
     } catch (error) {
       console.error('일정 완료 상태 변경 실패:', error);
+    }
+  };
+
+  const handleDeleteSchedule = async (scheduleId: string, deleteAllRecurring: boolean = false) => {
+    try {
+      await deleteSchedule(scheduleId, deleteAllRecurring);
+      setScheduleDetailDialogVisible(false);
+    } catch (error) {
+      console.error('일정 삭제 실패:', error);
     }
   };
 
@@ -627,15 +660,26 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
                           <View style={inlineStyles.enhancedMainContent}>
                             {/* 상단: 제목과 우선순위 */}
                             <View style={inlineStyles.enhancedTitleRow}>
-                              <Text
-                                style={[
-                                  inlineStyles.enhancedScheduleTitle,
-                                  isCompleted && inlineStyles.enhancedCompletedText,
-                                ]}
-                                numberOfLines={2}
-                              >
-                                {schedule.title}
-                              </Text>
+                              <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+                                {schedule.isRecurring && (
+                                  <Icon 
+                                    name="repeat" 
+                                    size={14} 
+                                    color="#2C5282" 
+                                    style={{ marginRight: 6 }}
+                                  />
+                                )}
+                                <Text
+                                  style={[
+                                    inlineStyles.enhancedScheduleTitle,
+                                    isCompleted && inlineStyles.enhancedCompletedText,
+                                    { flex: 1 }
+                                  ]}
+                                  numberOfLines={2}
+                                >
+                                  {schedule.title}
+                                </Text>
+                              </View>
                               {priority !== 'LOW' && (
                                 <View style={inlineStyles.enhancedPriorityBadge}>
                                   {priorityOption?.icon && React.createElement(priorityOption.icon, {
@@ -749,6 +793,20 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
           selectedDate={selectedDate}
         />
         
+        {/* 일정 추가 다이얼로그 (수정 버튼에서 호출) */}
+        <AddScheduleDialog
+          visible={isAddDialogVisible}
+          onDismiss={hideAddDialog}
+          onAddSchedule={handleAddSchedule}
+          onEditSchedule={handleEditSchedule}
+          categories={categories}
+          priorityOptions={priorityOptions}
+          repeatOptions={repeatOptions}
+          selectedDate={selectedDate}
+          editSchedule={editScheduleData}
+          mode={editScheduleData ? 'edit' : 'add'}
+        />
+        
         {/* 일정 상세 다이얼로그 */}
         <ScheduleDetailDialog
           visible={scheduleDetailDialogVisible}
@@ -758,7 +816,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
           priorityOptions={priorityOptions}
           onEdit={(id: string) => {
             setScheduleDetailDialogVisible(false);
-            navigation.navigate('EditSchedule', { scheduleId: id });
+            showAddDialog(selectedScheduleForDetail);
           }}
           onComplete={(id: string) => {
             handleToggleComplete(id, true);
@@ -767,6 +825,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
               setSelectedScheduleForDetail(updated);
             }
           }}
+          onDelete={handleDeleteSchedule}
         />
       </Portal>
 
