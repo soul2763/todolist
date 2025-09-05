@@ -181,23 +181,23 @@ export const ScheduleProvider = ({ children }) => {
       await AsyncStorage.setItem('schedules', JSON.stringify(updatedSchedules));
       setSchedules(updatedSchedules);
       
-      // 알람이 설정된 경우 알람 등록 (임시 비활성화)
-      console.log('🔔 일정 저장 시 알람 확인 (비활성화됨):', {
+      // 알람이 설정된 경우 알람 등록
+      console.log('🔔 일정 저장 시 알람 확인:', {
         alarmEnabled: baseSchedule.alarmEnabled,
         alarmTime: baseSchedule.alarmTime,
         AlarmService: !!AlarmService,
         recurringCount: recurringSchedules.length
       });
       
-      // if (baseSchedule.alarmEnabled && baseSchedule.alarmTime && AlarmService) {
-      //   console.log('✅ 알람 등록 시작');
-      //   // 각 반복 일정에 대해 알람 등록
-      //   for (const recurringSchedule of recurringSchedules) {
-      //     await AlarmService.scheduleAlarm(recurringSchedule);
-      //   }
-      // } else {
-      //   console.log('❌ 알람 등록 조건 불충족');
-      // }
+      if (baseSchedule.alarmEnabled && baseSchedule.alarmTime && AlarmService) {
+        console.log('✅ 알람 등록 시작');
+        // 각 반복 일정에 대해 알람 등록
+        for (const recurringSchedule of recurringSchedules) {
+          await AlarmService.scheduleAlarm(recurringSchedule);
+        }
+      } else {
+        console.log('❌ 알람 등록 조건 불충족');
+      }
       
       return baseSchedule;
     } catch (error) {
@@ -218,16 +218,16 @@ export const ScheduleProvider = ({ children }) => {
       // 수정된 일정 찾기
       const updatedSchedule = updatedSchedules.find(schedule => schedule.id === id);
       
-      // 알람 관련 업데이트 처리 (임시 비활성화)
-      // if (updatedSchedule && AlarmService) {
-      //   if (updatedSchedule.alarmEnabled && updatedSchedule.alarmTime) {
-      //     // 알람이 켜져있고 시간이 설정된 경우 알람 등록/업데이트
-      //     await AlarmService.updateAlarm(updatedSchedule);
-      //   } else {
-      //     // 알람이 꺼져있거나 시간이 없는 경우 알람 취소
-      //     await AlarmService.cancelAlarm(id);
-      //   }
-      // }
+      // 알람 관련 업데이트 처리
+      if (updatedSchedule && AlarmService) {
+        if (updatedSchedule.alarmEnabled && updatedSchedule.alarmTime) {
+          // 알람이 켜져있고 시간이 설정된 경우 알람 등록/업데이트
+          await AlarmService.updateAlarm(updatedSchedule);
+        } else {
+          // 알람이 꺼져있거나 시간이 없는 경우 알람 취소
+          await AlarmService.cancelAlarm(id);
+        }
+      }
     } catch (error) {
       console.error('일정 수정 실패:', error);
       throw error;
@@ -263,10 +263,10 @@ export const ScheduleProvider = ({ children }) => {
         setSchedules(updatedSchedules);
       }
       
-      // 일정 삭제 시 알람도 함께 취소 (임시 비활성화)
-      // if (AlarmService) {
-      //   await AlarmService.cancelAlarm(id);
-      // }
+      // 일정 삭제 시 알람도 함께 취소
+      if (AlarmService) {
+        await AlarmService.cancelAlarm(id);
+      }
     } catch (error) {
       console.error('일정 삭제 실패:', error);
       throw error;

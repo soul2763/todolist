@@ -8,6 +8,7 @@ import { format, parseISO } from 'date-fns';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AddScheduleDialog from '../components/ScheduleDialog';
 import ScheduleDetailDialog from '../components/ScheduleDetailDialog';
+import AlarmPermissionDialog from '../components/AlarmPermissionDialog';
 import { HomeScreenStyles } from '../styles/HomeScreenStyles';
 import { Schedule, Category, PriorityOptions, RepeatOptions, ViewMode } from '../types';
 
@@ -221,11 +222,21 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
   const [selectedScheduleForDetail, setSelectedScheduleForDetail] = useState<Schedule | null>(null);
   const [isAddDialogVisible, setIsAddDialogVisible] = useState(false);
   const [editScheduleData, setEditScheduleData] = useState<Schedule | null>(null);
+  const [showAlarmPermissionDialog, setShowAlarmPermissionDialog] = useState(false);
 
   const insets = useSafeAreaInsets();
 
   const showDialog = (selectedDateForDialog: string | null = null) => {
-    setIsDialogVisible(true);
+    // 디버깅 모드에서는 권한 요청 없이 바로 다이얼로그 표시
+    if (__DEV__) {
+      setIsDialogVisible(true);
+    } else if (AlarmService) {
+      // 릴리즈 모드에서만 권한 요청
+      setShowAlarmPermissionDialog(true);
+    } else {
+      setIsDialogVisible(true);
+    }
+    
     // 선택된 날짜를 다이얼로그에 전달하기 위해 상태 업데이트
     if (selectedDateForDialog) {
       setSelectedDate(selectedDateForDialog);
@@ -291,6 +302,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
       console.error('일정 삭제 실패:', error);
     }
   };
+
 
   // 선택된 날짜의 일정 목록 (기간 일정 포함)
   const schedulesForSelectedDate = useMemo(() => {
@@ -611,12 +623,14 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
           </View>
 
           <View style={inlineStyles.scheduleHeader}>
-            <Text style={HomeScreenStyles.scheduleTitle}>
-              {getDateRangeText()}
-            </Text>
-            <Text style={inlineStyles.scheduleCount}>
-              {schedulesForSelectedDate.length}개의 일정
-            </Text>
+            <View style={inlineStyles.scheduleHeaderLeft}>
+              <Text style={HomeScreenStyles.scheduleTitle}>
+                {getDateRangeText()}
+              </Text>
+              <Text style={inlineStyles.scheduleCount}>
+                {schedulesForSelectedDate.length}개의 일정
+              </Text>
+            </View>
           </View>
 
           <View style={[HomeScreenStyles.scheduleList, { maxHeight: 400 }]}>
@@ -826,6 +840,15 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
             }
           }}
           onDelete={handleDeleteSchedule}
+        />
+        
+        <AlarmPermissionDialog
+          visible={showAlarmPermissionDialog}
+          onDismiss={() => setShowAlarmPermissionDialog(false)}
+          onPermissionGranted={() => {
+            setShowAlarmPermissionDialog(false);
+            setIsDialogVisible(true);
+          }}
         />
       </Portal>
 
